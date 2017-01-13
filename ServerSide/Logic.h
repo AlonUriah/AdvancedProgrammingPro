@@ -8,7 +8,7 @@
 #ifndef LOGIC_H_
 #define LOGIC_H_
 
-#include "../Common/Grid.h"
+#include "Grid.h"
 #include "TaxiCenter.h"
 
 class Logic {

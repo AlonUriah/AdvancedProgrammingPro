@@ -24,10 +24,3 @@ LuxuryTaxi::LuxuryTaxi(int id, char manu, char color) : Taxi(id, manu, color) {
  * LuxuryTaxi destructor
  */
 LuxuryTaxi::~LuxuryTaxi() { }
-/*
- * Gets the id
- */
-int LuxuryTaxi::getId()
-{
-	return this->id;
-}

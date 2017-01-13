@@ -6,13 +6,6 @@
  */
 #include "Taxi.h"
 
-int Taxi::getKm(){
-	return 0;
-}
-void Taxi::setKm(int km){
-
-}
-
 /*
  * Construct a new taxi.
  */

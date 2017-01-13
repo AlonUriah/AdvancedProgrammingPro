@@ -55,7 +55,8 @@ Client::Client(char* serverAddress, int serverPortNumber) {
  */
 Conn_Status Client::connect() {
 	//Try create a socket UDP connection
-	_socket = socket(AF_INET, SOCK_DGRAM, 0);
+	//_socket = socket(AF_INET, SOCK_DGRAM, 0); <-- udp connection
+	_socket = socket(AF_INET, SOCK_STREAM, 0); // 0 is protocol, stream is for tcp
 	if(_socket < 0){
 		perror("Error creating a socket");
 		return FAILED;

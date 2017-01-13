@@ -6,7 +6,7 @@
 #include <vector>
 #include <string>
 #include <sstream>
-#include "./Factories/GridFactory.h"
+#include "GridFactory.h"
 #include "Obstacle.h"
 
 #ifndef HEADERS_COMMON_H_
@@ -18,7 +18,6 @@ enum Marital {SINGLE, MARRIED, DIVORCED, WIDOWED};
 enum Status {PENDING, READY, TO_CUSTOMER,TO_DESTINATION,TO_CENTER, ENDED};
 enum Color {RED, BLUE, GREEN, PINK, WHITE};
 enum Manufacturer {HONDA, SUBARU, TESLA, FIAT};
-
 enum Conn_Status{SUCCESS,FAILED};
 
 struct DriverWrapper{

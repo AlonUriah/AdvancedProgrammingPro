@@ -5,7 +5,7 @@
 //============================================================================
 
 #include "Common.h"
-#include "./Factories/GridFactory.h"
+#include "GridFactory.h"
 #include "Obstacle.h"
 #include <iostream>
 using namespace std;

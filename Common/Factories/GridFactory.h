@@ -7,7 +7,7 @@
 //				 to build Grids of certain size and maybe more features in the future.
 //============================================================================
 #include <vector>
-#include "../Grid.h"
+#include "Grid.h"
 
 #ifndef HEADERS_GRID_FACTORY_
 #define HEADERS_GRID_FACTORY_

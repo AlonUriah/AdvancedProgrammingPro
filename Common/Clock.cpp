@@ -13,6 +13,8 @@ Clock::Clock() {
 	this->time = 0;
 	// Initialize a list of Scheduled items.
 	this->listeners = new list<Scheduled*>;
+
+	pthread_mutex_init(&this->scheduled_locker, 0);
 }
 /*
  * The method notifies all the observers,
@@ -32,7 +34,9 @@ void Clock::notifyAll()
  */
 void Clock::addListener(Scheduled* scheduled)
 {
+	pthread_mutex_lock(&this->scheduled_locker);
 	this->listeners->push_back(scheduled);
+	pthread_mutex_unlock(&this->scheduled_locker);
 }
 /*
  * Removes a listener from the Scheduled items' list.
@@ -67,9 +71,12 @@ int Clock::getTime()
  * Clock destructor
  */
 Clock::~Clock() {
+	pthread_mutex_destroy(&this->scheduled_locker);
+
 	// Empty the list.
 	while (!this->listeners->empty())
 		this->listeners->pop_front();
 	// Delete it.
 	delete this->listeners;
 }
+

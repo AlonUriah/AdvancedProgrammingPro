@@ -6,12 +6,10 @@
 //				 It is based on searchable.
 //============================================================================
 #include "Point.h"
-#include "../SearchAlgo/Searchable.h"
+#include "Searchable.h"
 
 #ifndef HEADERS_NODE_H_
 #define HEADERS_NODE_H_
-
-using namespace std;
 
 class Node : public Searchable{
 public:

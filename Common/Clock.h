@@ -7,7 +7,7 @@
 #include <list>
 #include <iostream>
 #include "Scheduled.h"
-
+#include <pthread.h>
 using namespace std;
 
 #ifndef CLOCK_H_
@@ -47,6 +47,7 @@ public:
 private:
 	int time;
 	list<Scheduled*>* listeners;
+	pthread_mutex_t scheduled_locker;
 };
 
 #endif /* CLOCK_H_ */

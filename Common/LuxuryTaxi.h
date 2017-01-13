@@ -4,18 +4,17 @@
  * a LuxuryTaxi type taxi.
  */
 
-#include <boost/archive/text_oarchive.hpp>
-#include <boost/archive/text_iarchive.hpp>
-#include <boost/serialization/base_object.hpp>
-
-#include "Taxi.h"
 
 #ifndef LUXURYTAXI_H_
 #define LUXURYTAXI_H_
+#include <boost/archive/text_oarchive.hpp>
+#include <boost/archive/text_iarchive.hpp>
+#include <boost/serialization/base_object.hpp>
+#include "Taxi.h"
+
 
 class LuxuryTaxi : public Taxi {
 public:
-
 	LuxuryTaxi();
 	/*
 	 * LuxuryTaxi constructor
@@ -25,9 +24,5 @@ public:
 	 * LuxuryTaxi destructor
 	 */
 	virtual ~LuxuryTaxi();
-	/*
-	 * Gets the id
-	 */
-	int getId();
 };
 #endif /* LUXURYTAXI_H_ */

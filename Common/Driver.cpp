@@ -140,6 +140,7 @@ Driver& Driver::operator = (const Driver &driver)
 	status = driver.status;
 	xp = driver.xp;
 	vehicle_id = driver.vehicle_id;
+	//taxi = driver.taxi;
 	return *this;
 }
 /*
@@ -153,6 +154,3 @@ bool Driver::operator == (const Driver &driver) const
 	return false;
 }
 
-Taxi* Driver::getTaxi(){
-	return this->taxi;
-}
