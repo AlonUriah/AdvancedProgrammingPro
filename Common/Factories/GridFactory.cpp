@@ -7,7 +7,7 @@
 //				 to build Grids of certain size and maybe more features in the future.
 //============================================================================
 #include "GridFactory.h"
-#include "Grid.h"
+#include "../Grid.h"
 
 /*
  * By default factory creates Grids
