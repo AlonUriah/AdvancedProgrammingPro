@@ -154,3 +154,6 @@ bool Driver::operator == (const Driver &driver) const
 	return false;
 }
 
+Taxi* Driver::getTaxi(){
+	return this->taxi;
+}
