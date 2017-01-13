@@ -110,6 +110,16 @@ public:
 	 */
 	bool operator == (const Driver &driver) const;
 
+	//Client purposes
+	Taxi* getTaxi();
+ 
+	// For gTest purposes
+	int getSatisfaction();
+	void setExperience(int exp);
+	void setSatisfaction(int satisfaction);
+	void setStatus(Marital s);
+	int getSpeed();
+	
 	/*template<class Archive>
 	void save(Archive& archive, const unsigned int verion) const{
 		ofstream file("archive.txt");
