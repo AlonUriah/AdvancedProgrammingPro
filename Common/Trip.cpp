@@ -26,6 +26,7 @@ Trip::Trip(int id, Point src, Point dest, int passengers, double tariff, int sta
 void Trip::assignDriver(Driver* driver)
 {
 	this->driver = driver;
+	this->driver->setAvailability(false);
 	this->status = READY;
 }
 /*
@@ -123,6 +124,7 @@ void Trip::timePassed(int time)
 		if (this->currentLocation == this->destination)
 		{
 			this->status = ENDED;
+			this->driver->setAvailability(true);
 			return;
 		}
 

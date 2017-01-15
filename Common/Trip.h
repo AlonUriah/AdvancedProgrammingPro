@@ -5,11 +5,11 @@
  */#include "Point.h"
 #include "Driver.h"
 #include "Taxi.h"
-#include "BFS.h"
+#include "../SearchAlgo/BFS.h"
 #include "Scheduled.h"
 #include "Grid.h"
 #include "Node.h"
-#include "Searchable.h"
+#include "../SearchAlgo/Searchable.h"
 
 #ifndef TRIP_H_
 #define TRIP_H_

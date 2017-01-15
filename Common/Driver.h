@@ -17,6 +17,7 @@ using namespace std;
 
 #include "Common.h"
 #include "Point.h"
+#include "Taxi.h"
 #include "RegularTaxi.h"
 #include "LuxuryTaxi.h"
 #include <iostream>
@@ -27,6 +28,7 @@ private:
 	int age;
 	int xp;
 	int vehicle_id;
+	bool available;
 	Point location;
 	Taxi* taxi;
 	Marital status;
@@ -52,6 +54,7 @@ public:
 		location = Point(0,0);
 		taxi = 0;
 		status = WIDOWED;
+		available = true;
 	};
 	/*
 	 * Copy constructor
@@ -102,6 +105,16 @@ public:
 	 */
 	int getSpeed();
 	/*
+	 * Set the availability of
+	 * the driver.
+	 */
+	void setAvailability(bool val);
+	/*
+	 * Retrieves the drivers' availability
+	 * to handle a new trip
+	 */
+	bool isAvailable();
+	/*
 	 * Operator overloading
 	 */
 	Driver& operator = (const Driver &driver);
@@ -109,43 +122,15 @@ public:
 	 * Operator overloading
 	 */
 	bool operator == (const Driver &driver) const;
-
+	
 	//Client purposes
 	Taxi* getTaxi();
- 
+
 	// For gTest purposes
 	int getSatisfaction();
 	void setExperience(int exp);
 	void setSatisfaction(int satisfaction);
 	void setStatus(Marital s);
-	int getSpeed();
-	
-	/*template<class Archive>
-	void save(Archive& archive, const unsigned int verion) const{
-		ofstream file("archive.txt");
-		boost::archive::text_oarchive oa(file);
-		oa & BOOST_SERIALIZATION_NVP(*this);
-
-
-		  archive << BOOST_SERIALIZATION_NVP(id);
-		archive << BOOST_SERIALIZATION_NVP(age);
-		archive << BOOST_SERIALIZATION_NVP(vehicle_id);
-		archive << BOOST_SERIALIZATION_NVP(location);
-		archive << BOOST_SERIALIZATION_NVP(taxi);
-		archive << BOOST_SERIALIZATION_NVP(status);*/
-	//}
-
-	/*template<class Archive>
-	void load(Archive& archive, const unsigned int version){
-		archive >> BOOST_SERIALIZATION_NVP(id);
-		archive >> BOOST_SERIALIZATION_NVP(age);
-		archive >> BOOST_SERIALIZATION_NVP(vehicle_id);
-		archive >> BOOST_SERIALIZATION_NVP(location);
-		archive >> BOOST_SERIALIZATION_NVP(taxi);
-		archive >> BOOST_SERIALIZATION_NVP(status);
-	}*/
-
-	//BOOST_SERIALIZATION_SPLIT_MEMBER( ) // must be part of class
 };
 
 #endif /* DRIVER_H_ */
