@@ -11,8 +11,7 @@
 
 
 
-#ifndef SERVER_H_
-#define SERVER_H_
+
 
 #include <iostream>
 #include <sys/socket.h>
@@ -26,14 +25,18 @@
 #include <sstream>
 #include <boost/archive/text_oarchive.hpp>
 #include <boost/archive/text_iarchive.hpp>
-#include "Common.h"
-#include "Driver.h"
-#include "Taxi.h"
+#include "../Common/Common.h"
+#include "../Common/Driver.h"
+#include "../Common/Taxi.h"
 #include <list>
 #include <stdexcept>
 #include <pthread.h>
 
 using namespace std;
+
+#ifndef SERVER_H_
+#define SERVER_H_
+
 /*
  * This is the Server class.
  * It handles the whole server
@@ -80,6 +83,7 @@ private:
 	 */
 	struct ClientData {
 		int client;
+		int client_val;
 		unsigned int client_len;
 		int driverId;
 		Server* server;

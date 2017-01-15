@@ -49,13 +49,13 @@ void Server::handleClients(int num)
 	try
 	{
 		// Open a listening socket, TCP type.
-		this->serverSocket = socket(AF_INET, SOCK_STREAM, 0);
+		this->serverSocket = socket(PF_INET, SOCK_STREAM, 0);
 		if (this->serverSocket == -1)
 			perror("Error: socket was not able to initiate.");
 
 		// Define the server details.
 		memset(&this->server_addr, 0, sizeof(this->server_addr));
-		this->server_addr.sin_family = AF_INET;
+		this->server_addr.sin_family = PF_INET;
 		this->server_addr.sin_addr.s_addr = INADDR_ANY;
 		this->server_addr.sin_port = htons(this->port);
 		bzero(&(this->server_addr.sin_zero), 8);
@@ -81,12 +81,12 @@ void Server::handleClients(int num)
 			{
 				// Declare on client's data to preserve
 				ClientData* currentClient;
-				int client, listen_ret;
-				unsigned int client_len;
+				int client, client_val;
+				unsigned int client_len = sizeof(client);
 
 				// Accept a new client
-				listen_ret = accept(this->serverSocket, (struct sockaddr *)&client, &client_len);
-				if (listen_ret < 0)
+				client_val = accept(this->serverSocket, (struct sockaddr *)&client, &client_len);
+				if (client_val < 0)
 				{
 					perror("Error: client was unable to connect.");
 				}
@@ -95,6 +95,7 @@ void Server::handleClients(int num)
 					// Create a new client data type, and store the data
 					currentClient = new ClientData();
 					currentClient->client = client;
+					currentClient->client_val = client_val;
 					currentClient->client_len = client_len;
 					currentClient->server = this;
 
@@ -112,7 +113,6 @@ void Server::handleClients(int num)
 			}
 			i++;
 		}
-
 		/*
 		 * Wait for all the clients to finish the registration
 		 * process, of sending a 'Driver' object, and getting
@@ -146,9 +146,10 @@ void* Server::handleClient(void* element)
 
 	char buffer[4096];
 	memset(buffer, 0, sizeof(buffer));
-	long bytes = recv(this->serverSocket, buffer, sizeof(buffer), 0);
+	long bytes = recv(currentClient->client_val, buffer, sizeof(buffer), 0);
 	if (bytes > 0)
 	{
+
 		// Deserialize the driver.
 		stringstream bufferStream;
 		bufferStream << buffer;
@@ -183,7 +184,7 @@ void* Server::handleClient(void* element)
 			// Send the taxi to the client.
 			try
 			{
-				int sent_bytes = send(this->serverSocket, data, data_len, 0);
+				int sent_bytes = send(currentClient->client_val, data, data_len, 0);
 				if (sent_bytes < 0) {
 					perror("Error: couldn't send taxi.");
 				}
@@ -226,7 +227,7 @@ void Server::broadcast()
 		// Send the point to the client.
 		try
 		{
-			int sent_bytes = send(this->serverSocket, data, data_len, 0);
+			int sent_bytes = send((*it)->client_val, data, data_len, 0);
 			if (sent_bytes < 0) {
 				perror("Error: couldn't send point.");
 			}
@@ -250,7 +251,7 @@ void Server::Abort()
 	{
 		try
 		{
-			int sent_bytes = send(this->serverSocket, "7", 1, 0);
+			int sent_bytes = send((*it)->client_val, "7", 1, 0);
 			if (sent_bytes < 0) {
 				perror("Error: couldn't send exit sign.");
 			}

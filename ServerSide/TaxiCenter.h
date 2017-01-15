@@ -9,16 +9,16 @@
 #ifndef TAXICENTER_H_
 #define TAXICENTER_H_
 
-#include "GridFactory.h"
-#include "Grid.h"
-#include "Clock.h"
-#include "Trip.h"
+#include "../Common/Factories/GridFactory.h"
+#include "../Common/Grid.h"
+#include "../Common/Clock.h"
+#include "../Common/Trip.h"
 #include <iostream>
-#include "LuxuryTaxi.h"
-#include "RegularTaxi.h"
-#include "Taxi.h"
-#include "Common.h"
-#include "Scheduled.h"
+#include "../Common/LuxuryTaxi.h"
+#include "../Common/RegularTaxi.h"
+#include "../Common/Taxi.h"
+#include "../Common/Common.h"
+#include "../Common/Scheduled.h"
 #include "Server.h"
 #include <list>
 using namespace std;
@@ -26,11 +26,11 @@ using namespace std;
 
 class TaxiCenter : public Scheduled, public Server {
 private:
-	int threads_num;
 
 	list<Driver*>* drivers;
 	list<Taxi*>* cabs;
 	list<Trip*>* rides;
+	list<pthread_t>* threadsPool;
 	Clock* clock;
 
 	Grid* map;
