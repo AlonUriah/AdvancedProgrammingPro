@@ -22,6 +22,7 @@ Driver::Driver(int id, int age, char status, int xp, int vehicle_id)
 	this->xp = xp;
 	this->vehicle_id = vehicle_id;
 	this->location = Point(0, 0);
+	this->available = true;
 	// Assigning a status to the driver.
 	switch (status)
 	{
@@ -57,7 +58,7 @@ Driver::Driver(const Driver& driver)
 	status = driver.status;
 	xp = driver.xp;
 	vehicle_id = driver.vehicle_id;
-
+	available = driver.available;
 	taxi = NULL;
 	if (driver.taxi != NULL)
 		taxi = driver.taxi;
@@ -108,6 +109,14 @@ int Driver::getSpeed()
 	return speed;
 }
 /*
+ * Retrieves the drivers' availability
+ * to handle a new trip
+ */
+bool Driver::isAvailable()
+{
+	return this->available;
+}
+/*
  * Assigns a taxi to this driver
  */
 void Driver::assignTaxi(Taxi* taxi)
@@ -139,7 +148,9 @@ Driver& Driver::operator = (const Driver &driver)
 	age = driver.age;
 	status = driver.status;
 	xp = driver.xp;
+	available = driver.available;
 	vehicle_id = driver.vehicle_id;
+	//taxi = driver.taxi;
 	return *this;
 }
 /*
@@ -152,7 +163,17 @@ bool Driver::operator == (const Driver &driver) const
 	}
 	return false;
 }
-
+/*
+ * Get the driver's taxi
+ */
 Taxi* Driver::getTaxi(){
 	return this->taxi;
+}
+/*
+ * Set the availability of
+ * the driver.
+ */
+void Driver::setAvailability(bool val)
+{
+	this->available = val;
 }

@@ -2,8 +2,7 @@
  * This is the trip class. It handles
  * a trip which is done by a source and destination
  * points, a driver and a taxi.
- */
-#include "Point.h"
+ */#include "Point.h"
 #include "Driver.h"
 #include "Taxi.h"
 #include "../SearchAlgo/BFS.h"
@@ -14,7 +13,9 @@
 
 #ifndef TRIP_H_
 #define TRIP_H_
+
 #include "Common.h"
+
 class Trip : public Scheduled {
 private:
 	int id;
@@ -28,6 +29,7 @@ private:
 	int startTime;
 	Grid* map;
 	stack<Searchable*> route;
+	pthread_mutex_t bfs_locker;
 public:
 	/*
 	 * Constructor
@@ -65,6 +67,10 @@ public:
 	 * Get location
 	 */
 	Point& getCurrentLocation();
+	/*
+	 * Calculate its route
+	 */
+	void calculateRoute();
 	/*
 	 * Scheduled abstract method
 	 */

@@ -4,15 +4,14 @@
  * a RegularTaxi type taxi.
  */
 
-#include "Taxi.h"
 
-#include "boost/archive/text_oarchive.hpp"
-#include "boost/archive/text_iarchive.hpp"
-
-#include "Taxi.h"
 
 #ifndef REGULARTAXI_H_
 #define REGULARTAXI_H_
+
+#include "boost/archive/text_oarchive.hpp"
+#include "boost/archive/text_iarchive.hpp"
+#include "Taxi.h"
 
 class RegularTaxi : public Taxi {
 
@@ -22,7 +21,6 @@ public:
 		manu = HONDA;
 		color = BLUE;
 	}
-
 	/*
 	 * RegularTaxi constructor
 	 */
@@ -31,11 +29,6 @@ public:
 	 * RegularTaxi destructor
 	 */
 	virtual ~RegularTaxi();
-
-	/*
-	 * Gets the id
-	 */
-	int getId();
 };
 
 #endif /* REGULARTAXI_H_ */

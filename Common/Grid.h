@@ -10,7 +10,7 @@
 #define HEADERS_GRID_H_
 #include "Node.h"
 #include "Point.h"
-#include "../SearchAlgo/Searchable.h"
+#include "Searchable.h"
 
 class Grid {
 private:

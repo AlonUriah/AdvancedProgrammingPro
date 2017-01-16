@@ -3,11 +3,9 @@
 // Author      : Alon Aviv Uriah Ahrak
 // Description : A base class that supports BFS methods
 //============================================================================
-#include "../Common/Point.h"
+#include "Point.h"
 #include <stdexcept>
 #include <vector>
-
-using namespace std;
 
 #ifndef HEADERS_SEARCHABLE_H_
 #define HEADERS_SEARCHABLE_H_

@@ -3,7 +3,7 @@
  * It handles the server creation,
  * and its functionalities.
  */
-#include "Server.h"
+#include "TaxiCenter.h"
 #include <iostream>
 #include <stack>
 
@@ -13,7 +13,7 @@ int main(int argc, char** argv){
 	// Try to get a port by arguments
 	try
 	{
-		Server server(atoi(argv[1]));
+		TaxiCenter taxiCenter(atoi(argv[1]));
 	}
 	catch (...)
 	{

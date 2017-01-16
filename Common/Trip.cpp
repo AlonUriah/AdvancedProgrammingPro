@@ -17,6 +17,8 @@ Trip::Trip(int id, Point src, Point dest, int passengers, double tariff, int sta
 	// Unresolved details, yet.
 	this->driver = NULL;
 	this->map = map;
+
+	pthread_mutex_init(&this->bfs_locker, 0);
 }
 /*
  * Assign a driver to this trip
@@ -24,6 +26,7 @@ Trip::Trip(int id, Point src, Point dest, int passengers, double tariff, int sta
 void Trip::assignDriver(Driver* driver)
 {
 	this->driver = driver;
+	this->driver->setAvailability(false);
 	this->status = READY;
 }
 /*
@@ -69,6 +72,25 @@ Point& Trip::getCurrentLocation()
 	return this->currentLocation;
 }
 /*
+ * Calculate is route
+ */
+void Trip::calculateRoute()
+{
+	// Build the nodes according to src and dest
+	Node begin(this->source);
+	Node end(this->destination);
+
+	// Get the route
+	pthread_mutex_lock(&this->bfs_locker);
+	this->route = BFS::getRoot(*this->map, &begin, &end);
+	pthread_mutex_unlock(&this->bfs_locker);
+
+	// Pop first point
+	this->route.pop();
+
+}
+
+/*
  * Time has passed by 1 hour,
  * now lets check what is the current
  * time, and decide what to do with the trip.
@@ -77,15 +99,6 @@ void Trip::timePassed(int time)
 {
 	if (this->startTime == time && this->status == READY)
 	{
-		// Send him a route
-		Node begin(this->source);
-		Node end(this->destination);
-
-		//Grid grid(this->map->getHeight(), this->map->getWidth());
-		this->route = BFS::getRoot(*this->map, &begin, &end);
-
-
-		this->route.pop();
 		this->status = TO_DESTINATION;
 	}
 	else if (this->startTime < time && this->status == TO_DESTINATION)
@@ -111,6 +124,7 @@ void Trip::timePassed(int time)
 		if (this->currentLocation == this->destination)
 		{
 			this->status = ENDED;
+			this->driver->setAvailability(true);
 			return;
 		}
 
@@ -176,6 +190,7 @@ bool Trip::operator == (const Trip &trip) const
  */
 Trip::~Trip()
 {
+	pthread_mutex_destroy(&this->bfs_locker);
 	this->map = NULL;
 	this->driver = NULL;
 }

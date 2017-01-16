@@ -6,10 +6,11 @@
 //============================================================================
 #ifndef HEADERS_POINT_H_
 #define HEADERS_POINT_H_
+
+// Members
 #include <iostream>
 
-//Ex3 addons
-#include <fstream>
+// Serialization Members
 #include <boost/archive/text_oarchive.hpp>
 #include <boost/archive/text_iarchive.hpp>
 

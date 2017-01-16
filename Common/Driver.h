@@ -3,6 +3,18 @@
  * The class handles a driver.
  */
 
+
+//Ex3 add-ons
+
+
+using namespace std;
+#ifndef DRIVER_H_
+#define DRIVER_H_
+
+#include <fstream>
+#include <boost/archive/text_oarchive.hpp>
+#include <boost/archive/text_iarchive.hpp>
+
 #include "Common.h"
 #include "Point.h"
 #include "Taxi.h"
@@ -10,21 +22,13 @@
 #include "LuxuryTaxi.h"
 #include <iostream>
 
-#include <fstream>
-#include <boost/archive/text_oarchive.hpp>
-#include <boost/archive/text_iarchive.hpp>
-
-using namespace std;
-#ifndef DRIVER_H_
-#define DRIVER_H_
-
 class Driver {
-
 private:
 	int id;
 	int age;
 	int xp;
 	int vehicle_id;
+	bool available;
 	Point location;
 	Taxi* taxi;
 	Marital status;
@@ -50,6 +54,7 @@ public:
 		location = Point(0,0);
 		taxi = 0;
 		status = WIDOWED;
+		available = true;
 	};
 	/*
 	 * Copy constructor
@@ -96,6 +101,20 @@ public:
 	 */
 	void updateLocation(Point& location);
 	/*
+	 * Get the driver's taxi's speed
+	 */
+	int getSpeed();
+	/*
+	 * Set the availability of
+	 * the driver.
+	 */
+	void setAvailability(bool val);
+	/*
+	 * Retrieves the drivers' availability
+	 * to handle a new trip
+	 */
+	bool isAvailable();
+	/*
 	 * Operator overloading
 	 */
 	Driver& operator = (const Driver &driver);
@@ -103,7 +122,7 @@ public:
 	 * Operator overloading
 	 */
 	bool operator == (const Driver &driver) const;
-
+	
 	//Client purposes
 	Taxi* getTaxi();
 
@@ -112,7 +131,6 @@ public:
 	void setExperience(int exp);
 	void setSatisfaction(int satisfaction);
 	void setStatus(Marital s);
-	int getSpeed();
 };
 
 #endif /* DRIVER_H_ */
