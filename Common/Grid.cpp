@@ -51,8 +51,12 @@ void Grid::initGrid(){
 
 	for(int x=0; x<_width; x++){
 		for(int y=0; y<_height; y++){
-			Point current(x,y);
-			_matrix[(y*_width) + x] = new Node(current);
+			// Create a new point allocated on stack to avoid stack overflow
+			Point* current = new Point(x,y);
+
+			_matrix[(y*_width) + x] = new Node(*current);
+
+			delete current;
 		}
 	}
 }
@@ -78,7 +82,8 @@ Node* Grid::getNodeAt(Point location){
  * This is a searchable method that node is overriding
  */
 vector<Searchable*> Grid::getNodesNeighbors(Searchable* n1){
-	Point current = n1->getValue();
+	Point* current = &(n1->getValue());
+
 	vector<Searchable*> neighbors;
 
 	/*
@@ -88,36 +93,53 @@ vector<Searchable*> Grid::getNodesNeighbors(Searchable* n1){
 	 * If one's neighbor is an obstacle - ignore it, don't count
 	 * it as a neighbor.
 	 */
-	if(current.getX()-1 >= 0){
-		Point left(current.getX()-1,current.getY());
-		Node* neighbor = getNodeAt(left);
+	if(current->getX()-1 >= 0){
+		// Look for left Node point, save it on heap to reduce stack use
+		Point* left = new Point(current->getX()-1,current->getY());
+
+		Node* neighbor = getNodeAt(*left);
+
 		if(neighbor->isAvailable()){
-			neighbors.push_back(getNodeAt(left));
+			neighbors.push_back(getNodeAt(*left));//left));
 		}
+
+		delete left;
 	}
 
-	if(current.getY()+1 < _height){
-			Point up(current.getX(),current.getY()+1);
-			Node* neighbor = getNodeAt(up);
-			if(neighbor->isAvailable()){
-				neighbors.push_back(getNodeAt(up));
-			}
+	if(current->getY()+1 < _height){
+		Point* up = new Point(current->getX(),current->getY()+1);
+
+		Node* neighbor = getNodeAt(*up);
+
+		if(neighbor->isAvailable()){
+			neighbors.push_back(getNodeAt(*up));
+		}
+
+		delete up;
 	}
 
-	if(current.getX()+1 < _width){
-		Point right(current.getX()+1,current.getY());
-		Node* neighbor = getNodeAt(right);
+	if(current->getX()+1 < _width){
+		Point* right = new Point(current->getX()+1,current->getY());
+
+		Node* neighbor = getNodeAt(*right);
+
 		if(neighbor->isAvailable()){
-			neighbors.push_back(getNodeAt(right));
+			neighbors.push_back(getNodeAt(*right));
 		}
+
+		delete right;
 	}
 
-	if(current.getY()-1 >= 0){
-		Point down(current.getX(),current.getY()-1);
-		Node* neighbor = getNodeAt(down);
+	if(current->getY()-1 >= 0){
+		Point* down = new Point(current->getX(),current->getY()-1);
+
+		Node* neighbor = getNodeAt(*down);
+
 		if(neighbor->isAvailable()){
-			neighbors.push_back(getNodeAt(down));
+			neighbors.push_back(getNodeAt(*down));
 		}
+
+		delete down;
 	}
 
 	//The order demand (9,12,3,6) is implemented by the order of push
@@ -151,7 +173,9 @@ int Grid::getWidth(){
  */
 void Grid::swapNodes(Point location, Node* newNode){
 	Node* oldNode = getNodeAt(location);
+
 	_matrix[(location.getY()*_width)+location.getX()] = newNode;
+
 	delete oldNode;
 }
 
@@ -165,9 +189,12 @@ Grid::~Grid() {
 
 	for(int x=0; x<_width; x++){
 		for(int y=0; y<_height; y++){
-			Point current(x,y);
-			//currentNode = getNodeAt(current);
-			delete	getNodeAt(current);//currentNode;//getNodeAt(current);
+			// Create Point on heap to reduce stack use
+			Point* current = new Point(x,y);
+
+			delete	getNodeAt(*current);
+
+			delete current;
 		}
 	}
 	delete[] _matrix;
@@ -176,9 +203,12 @@ Grid::~Grid() {
 void Grid::resetNodesDistance(){
 	for(int i=0; i<_width; i++){
 		for(int j=0; j<_height; j++){
-			Point location(i,j);
-			Node* curr = getNodeAt(location);
+			Point* location = new Point(i,j);
+
+			Node* curr = getNodeAt(*location);
 			curr->setDistance(-1);
+
+			delete location;
 		}
 	}
 }
@@ -186,10 +216,13 @@ void Grid::resetNodesDistance(){
 void Grid::resetNodesParents(){
 	for(int i=0; i<_width; i++){
 		for(int j=0; j<_height; j++){
-			Point location(i,j);
-			Node* curr = getNodeAt(location);
+			Point* location = new Point(i,j);
+
+			Node* curr = getNodeAt(*location);
 			Searchable* dummy = 0;
 			curr->setParent(dummy);
+
+			delete location;
 		}
 	}
 }
