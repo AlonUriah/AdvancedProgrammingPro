@@ -6,7 +6,7 @@
 #include <vector>
 #include <string>
 #include <sstream>
-#include "GridFactory.h"
+#include "./Factories/GridFactory.h"
 #include "Obstacle.h"
 
 #ifndef HEADERS_COMMON_H_
@@ -19,6 +19,8 @@ enum Status {PENDING, READY, TO_CUSTOMER,TO_DESTINATION,TO_CENTER, ENDED};
 enum Color {RED, BLUE, GREEN, PINK, WHITE};
 enum Manufacturer {HONDA, SUBARU, TESLA, FIAT};
 enum Conn_Status{SUCCESS,FAILED};
+enum Logger_Levels{DEBUG,INFO,WARN};
+const string Logger_Levels_Str[] = {"DEBUG","INFO","WARN"};
 
 struct DriverWrapper{
 	int id;
