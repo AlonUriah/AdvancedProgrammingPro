@@ -10,7 +10,7 @@
 #define HEADERS_GRID_H_
 #include "Node.h"
 #include "Point.h"
-#include "Searchable.h"
+#include "../SearchAlgo/Searchable.h"
 
 class Grid {
 private:
@@ -80,7 +80,16 @@ public:
 	 */
 	~Grid();
 
+	/*
+	 * Before BFS runs this function resets nodes distance
+	 * so the BFS algorithm will work as it should.
+	 */
 	void resetNodesDistance();
+
+	/*
+	 * Before BFS runs this function resets nodes parents
+	 * so the BFS algorithm will work as it should.
+	 */
 	void resetNodesParents();
 };
 
