@@ -11,6 +11,7 @@
 #include "../Common/Common.h"
 #include "../Common/Driver.h"
 #include "../Common/Taxi.h"
+#include "../Common/Logger.h"
 
 // Serialization references
 #include <boost/archive/text_oarchive.hpp>
@@ -28,7 +29,12 @@ const int FAIL_RETURN_CODE = 0;
  * get taxi from server and assign it to driver ->
  * start receiving location updates
  */
-int clientMain(int argc, char** argv){
+int ClientMain(int argc, char** argv){
+
+	//Get Logger's singletone
+	Logger* logger = Logger::getInstance();
+	logger->debug("Client main thread was started...");
+
 	char* serverIpAdd;
 	int port;
 	bool isAlive = true;
@@ -45,10 +51,10 @@ int clientMain(int argc, char** argv){
 	Client client(serverIpAdd,port);
 
 	// Try connect to server, exit program, safely, at each FAIL
-	if(client.connect() == FAILED){
+	if(client.initConnection() == FAILED){
 		isAlive = false;
 		client.disconnect();
-		cout << "Could not connect server, please try again later" << endl;
+		logger->warn("Could not connect server, please try again later");
 		return FAIL_RETURN_CODE;
 	}
 
@@ -73,10 +79,11 @@ int clientMain(int argc, char** argv){
 
 	// Send to server
 	int data_len = strlen(data);
-	if(client.send(data,data_len) == FAILED){
+	if(client.sendMsg(data,data_len) == FAILED){
 		isAlive = false;
 		client.disconnect();
-		cout << "Could not send driver to server, about to exit the program" << endl;
+		logger -> warn("Could not send driver to server, about to exit the program");
+
 		return FAIL_RETURN_CODE;
 	}
 
@@ -84,7 +91,8 @@ int clientMain(int argc, char** argv){
 	if(client.receiveTaxi() == FAILED){
 		isAlive = false;
 		client.disconnect();
-		cout << "Could not get taxi from server, about to exit the program" << endl;
+		logger -> warn("Could not get taxi from server, about to exit the program");
+
 		return FAIL_RETURN_CODE;
 	}
 
@@ -92,7 +100,8 @@ int clientMain(int argc, char** argv){
 	if(client.startReceiving() == FAILED){
 		isAlive = false;
 		client.disconnect();
-		cout << "Connection was interrupted, about to exit the program" << endl;
+		logger -> warn("Connection was interrupted, about to exit the program");
+
 		return FAIL_RETURN_CODE;
 	}
 
@@ -100,9 +109,11 @@ int clientMain(int argc, char** argv){
 	if(isAlive){
 		try{
 			client.disconnect();
-			cout << "Connection was determined successfully" << endl;
+
+			logger->debug("Connection was determined successfully");
 		}catch(...){
-			cout << "Failed to determine connection" << endl;
+
+			logger->warn("Failed to determine connection");
 		}
 	}
 
@@ -115,6 +126,7 @@ int clientMain(int argc, char** argv){
 		delete driver;
 	}
 	delete driverWrapper;
+	delete logger;
 
 	return SUCCESS_RETURN_CODE;
 }

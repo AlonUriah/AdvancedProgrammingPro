@@ -10,6 +10,7 @@
 // Members
 #include "../Common/Common.h"
 #include "../Common/Driver.h"
+#include "../Common/Logger.h"
 
 // Connection Members
 #include <sys/socket.h>
@@ -25,6 +26,7 @@ private:
 	int _socket;
 	struct sockaddr_in _sin;
 	Driver* _driver;
+	Logger* _logger;
 
 public:
 	/*
@@ -43,7 +45,7 @@ public:
 	 * Connect to a server at _serverAdrress through _serverPortNumber
 	 * This method uses an UDP connection (SOCK_DGRAM).
 	 */
-	Conn_Status connect();
+	Conn_Status initConnection();
 
 	/*
 	 * Disconnects client from server.
@@ -55,7 +57,7 @@ public:
 	 * Sends one message (data[]) to server.
 	 * Announce user via appropriate Conn_Status
 	 */
-	Conn_Status send(const char data[], int data_len);
+	Conn_Status sendMsg(const char data[], int data_len);
 
 	/*
 	 * Receive ONE message from server.

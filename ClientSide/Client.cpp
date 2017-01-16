@@ -12,6 +12,7 @@
 #include "Client.h"
 #include "../Common/Taxi.h"
 #include "../Common/Common.h"
+#include "../Common/Logger.h"
 #include <cstring>
 
 // Connection references
@@ -21,7 +22,7 @@
 #include <arpa/inet.h>
 #include <sstream>
 
-// Serialization references
+// Serialization references and Logging
 #include <boost/archive/text_oarchive.hpp>
 #include <boost/archive/text_iarchive.hpp>
 
@@ -35,6 +36,7 @@ Client::Client(){
 	_serverPortNumber = -1;
 	_socket = 0;
 	_driver = 0;
+	_logger = Logger::getInstance();
 }
 
 /*
@@ -47,27 +49,36 @@ Client::Client(char* serverAddress, int serverPortNumber) {
 	_serverPortNumber = serverPortNumber;
 	_socket = 0;
 	_driver = 0;
+	_logger = Logger::getInstance();
 }
 
 /*
  * Connect to a server at _serverAdrress through _serverPortNumber
  * This method uses an UDP connection (SOCK_DGRAM).
  */
-Conn_Status Client::connect() {
-	//Try create a socket UDP connection
-	//_socket = socket(AF_INET, SOCK_DGRAM, 0); <-- udp connection
-	_socket = socket(AF_INET, SOCK_STREAM, 0); // 0 is protocol, stream is for tcp
+Conn_Status Client::initConnection() {
+	_logger->debug("Trying to initialize connection");
+
+	_socket = socket(PF_INET, SOCK_STREAM, 0);
+
 	if(_socket < 0){
 		perror("Error creating a socket");
+
 		return FAILED;
 	}
 
 	// Assign sockadd_in to socket
-	memset(&_sin, 0, sizeof(_sin));
-	_sin.sin_family = AF_INET;
+	memset(&_sin, '\0', sizeof(_sin));
+	_sin.sin_family = PF_INET;
 	_sin.sin_addr.s_addr = inet_addr(_serverIpAddress);
 	_sin.sin_port = htons(_serverPortNumber);
 
+	if(connect(_socket,(struct sockaddr*)&_sin, sizeof(_sin)) < 0){
+		_logger->warn("Could not connect to server");
+		return FAILED;
+	}
+
+	_logger->debug("Connection created");
 	// Return a Conn_Status success if you have reached that point
 	return SUCCESS;
 }
@@ -77,12 +88,16 @@ Conn_Status Client::connect() {
  * Announce user and return a proper Conn_Status.
  */
 Conn_Status Client::disconnect(){
+	_logger->debug("About to terminate connection...");
+
 	try{
 		close(_socket);
-		cout << "Closed socket successfully" << endl;
+		_logger->debug("Socket was closed successfully");
+
 		return SUCCESS;
 	}catch(...){
 		perror("Error closing the socket");
+
 		return FAILED;
 	}
 }
@@ -91,12 +106,15 @@ Conn_Status Client::disconnect(){
  * Sends one message (data[]) to server.
  * Announce user via appropriate Conn_Status
  */
-Conn_Status Client::send(const char data[], int data_len){
-	int sent_bytes = sendto(_socket, data, data_len, 0, (struct sockaddr*)&_sin,sizeof(_sin));
+Conn_Status Client::sendMsg(const char data[], int data_len){
+	int sent_bytes = send(_socket, data, data_len, 0);
+
 	if(sent_bytes < 0){
 		perror("Error writing to socket");
 		return FAILED;
 	}
+
+	_logger->debug("Message was sent");
 	return SUCCESS;
 }
 
@@ -106,19 +124,20 @@ Conn_Status Client::send(const char data[], int data_len){
  * From that point the client will be listening constantly.
  */
 Conn_Status Client::receiveTaxi(){
-	struct sockaddr_in from;
-	unsigned int from_len = sizeof(struct sockaddr_in);
 	// buffer to read the data into
 	char buffer[4096];
-	// Receive data by calling recvfrom
-	long bytes =	recvfrom(_socket, buffer, sizeof(buffer), 0, (struct sockaddr *) &from, &from_len);
 
+	// Receive data by calling recv - TCP conn
+	long bytes = recv(_socket, buffer, sizeof(buffer), 0);
 
 	if (bytes < 0) {
 		// In case data wasn't received properly
 		perror("Error reading from socket");
+
 		return FAILED;
 	}else{
+		_logger->debug("Got taxi message from server");
+
 		try{
 			// This method expects only taxi to be received - deserialize.
 			Taxi* taxi = new Taxi();
@@ -133,8 +152,10 @@ Conn_Status Client::receiveTaxi(){
 			_driver->assignTaxi(taxi);
 			// Avoid dangling pointer
 			taxi = NULL;
+
 			return SUCCESS;
 		}catch(...){
+
 			//In case data wasn't a taxi as expected
 			return FAILED;
 		}
@@ -152,16 +173,15 @@ void Client::setDriver(Driver* driver){
  * Starts the constant looping of receiving data from server
  */
 Conn_Status Client::startReceiving(){
-	struct sockaddr_in from;
-	unsigned int from_len = sizeof(struct sockaddr_in);
+	_logger->debug("Start receiving messages from server...");
+
 	char buffer[4096];
 	long bytes;
-
-	// Change isAlive once you get '7' (server exit code)
+	stringstream locationNotifierStr;
 	bool isAlive = true;
 
 	while(isAlive){
-		bytes  = recvfrom(_socket, buffer, sizeof(buffer), 0, (struct sockaddr *) &from, &from_len);
+		bytes =	recv(_socket, buffer, sizeof(buffer), 0);
 
 		// Only when you get an actual data try to parse and work with it
 		if(bytes > 0){
@@ -172,6 +192,7 @@ Conn_Status Client::startReceiving(){
 
 			// 7 is server's exit code
 			if(input == "7"){
+				_logger->debug("Server asked to terminate connection, exit code: 7");
 				isAlive = false;
 				continue;
 			}
@@ -189,11 +210,16 @@ Conn_Status Client::startReceiving(){
 					pointInArchive >> updateLocation;
 				}
 
-				// Notify user when you move
-				cout << "I have moved to: " << updateLocation << endl;
+				locationNotifierStr.str("");
+
+				locationNotifierStr << "I have moved to: " << updateLocation;
+				_logger->info(locationNotifierStr.str());
 				_driver->updateLocation(updateLocation);
+
+				memset(buffer,0,sizeof(buffer));
+
 			}catch(...){
-				cout << "Couldn't get new location from server, waiting for next input" << endl;
+				_logger->warn("Coudln't get new location from server");
 			}
 		}
 	} // End of while loop
