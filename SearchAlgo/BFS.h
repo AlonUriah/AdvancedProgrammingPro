@@ -30,7 +30,7 @@ public:
 	 * Destination is on top.
 	 * Based on wikipedia algorithm for BFS
 	 */
-	static stack<Searchable*> getRoot(Grid& map, Searchable* start, Searchable* end);
+	static stack<Searchable*>* getRoot(Grid& map, Searchable* start, Searchable* end);
 
 	/*
 	 * Default destructor.
