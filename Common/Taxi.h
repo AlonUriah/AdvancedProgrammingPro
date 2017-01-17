@@ -4,18 +4,16 @@
  * is the father of two other classes -
  * RegularTaxi and LuxuryTaxi.
  */
-
-
-
-
-#ifndef TAXI_H_
-#define TAXI_H_
-
-#include "Common.h"
 #include <iostream>
+#include "Common.h"
+
+using namespace std;
+
 #include <boost/archive/text_iarchive.hpp>
 #include <boost/archive/text_oarchive.hpp>
 
+#ifndef TAXI_H_
+#define TAXI_H_
 class Taxi {
 public:
 	Taxi(){
@@ -40,6 +38,9 @@ public:
 	 * Returns the speed.
 	 */
 	int getSpeed();
+	// gTest purposes
+	int getKm();
+	void setKm(int km);
 protected:
 	int id;
 	Manufacturer manu;
