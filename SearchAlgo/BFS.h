@@ -9,7 +9,7 @@
 //				 searchables.
 //============================================================================
 #include <stack>
-#include "Grid.h"
+#include "../Common/Grid.h"
 #include "Searchable.h"
 
 #ifndef HEADERS_BFS_H_
