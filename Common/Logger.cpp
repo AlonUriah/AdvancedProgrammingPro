@@ -117,7 +117,9 @@ void Logger::createHeadLine(){
 	msgInFormat << "*      " << getCurrentTime() << "      *" << endl;
 	msgInFormat << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << endl;
 
+	_fStream_mutex.lock();
 	_fStream << msgInFormat.str();
+	_fStream_mutex.unlock();
 
 	// Print to user, if asked to
 	if(_shouldPrint){
