@@ -89,7 +89,6 @@ private:
 	int serverSocket;
 	list<ClientData*>* clients;
 	pthread_mutex_t clients_locker;
-	Logger* logger;
 	/*
 	 * Handle a specific client, in a separate thread
 	 */
@@ -123,6 +122,8 @@ private:
 	 * it.
 	 */
 	virtual Taxi* addDriver(Driver* driver) = 0;
+protected:
+	Logger* logger;
 };
 
 #endif /* SERVER_H_ */

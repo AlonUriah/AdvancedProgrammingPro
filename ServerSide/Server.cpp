@@ -24,7 +24,7 @@ Server::Server(int port) {
 
 	// Get the logger singleton
 	this->logger = Logger::getInstance();
-	this->logger->shouldPrint(false);
+	this->logger->shouldPrint(true);
 	this->logger->info("SERVER Initialized.");
 }
 /*
@@ -44,7 +44,7 @@ Server::~Server() {
 	}
 	delete this->clients;
 	this->logger->info("SERVER Destroyed.");
-	this->logger = NULL;
+	delete this->logger;
 }
 /*
  * The method start a listening connection.
@@ -56,36 +56,45 @@ void Server::handleClients(int num)
 {
 	try
 	{
-		this->logger->info("Initializing socket...");
-
-		// Open a listening socket, TCP type.
-		this->serverSocket = socket(PF_INET, SOCK_STREAM, 0);
-		if (this->serverSocket == -1)
-			this->logger->warn("Socket was not able to create.");
-
-		this->logger->info("Setting server details...");
-
-		// Define the server details.
-		memset(&this->server_addr, 0, sizeof(this->server_addr));
-		this->server_addr.sin_family = PF_INET;
-		this->server_addr.sin_addr.s_addr = INADDR_ANY;
-		this->server_addr.sin_port = htons(this->port);
-		bzero(&(this->server_addr.sin_zero), 8);
-
-		this->logger->info("Binding the port...");
-
-		// Try to bind the port.
-		if (bind(this->serverSocket, (struct sockaddr*)&this->server_addr,
-				sizeof(struct sockaddr)) == -1)
+		/*
+		 * If the server wasn't created,
+		 * create it.
+		 * else, it is already listening for clients,
+		 * so keep on getting some clients.
+		 */
+		if (this->serverSocket < 0)
 		{
-			this->logger->warn("Port was not able to be binded.");
-			return;
+			this->logger->info("Initializing socket...");
+
+			// Open a listening socket, TCP type.
+			this->serverSocket = socket(PF_INET, SOCK_STREAM, 0);
+			if (this->serverSocket == -1)
+				this->logger->warn("Socket was not able to create.");
+
+			this->logger->info("Setting server details...");
+
+			// Define the server details.
+			memset(&this->server_addr, 0, sizeof(this->server_addr));
+			this->server_addr.sin_family = PF_INET;
+			this->server_addr.sin_addr.s_addr = INADDR_ANY;
+			this->server_addr.sin_port = htons(this->port);
+			bzero(&(this->server_addr.sin_zero), 8);
+
+			this->logger->info("Binding the port...");
+
+			// Try to bind the port.
+			if (bind(this->serverSocket, (struct sockaddr*)&this->server_addr,
+					sizeof(struct sockaddr)) == -1)
+			{
+				this->logger->warn("Port was not able to be binded.");
+				return;
+			}
+
+			this->logger->info("Server is now listening.");
+
+			// Start listening to broadband
+			listen(this->serverSocket, 5);
 		}
-
-		this->logger->info("Server is now listening on port " + this->port + ".");
-
-		// Start listening to broadband
-		listen(this->serverSocket, 5);
 		// Create a threads pool of 'num' threads
 		pthread_t threadsPool[num];
 		/*
@@ -109,7 +118,7 @@ void Server::handleClients(int num)
 				}
 				else
 				{
-					this->logger->info("Client no. " + i + " accepted.");
+					this->logger->info("Client accepted.");
 
 					// Create a new client data type, and store the data
 					currentClient = new ClientData();
@@ -174,7 +183,7 @@ void* Server::handleClient(void* element)
 	// Avoid dangling pointer
 	element = NULL;
 
-	this->logger->info("Handling client no. " + currentClient->client_val + ".");
+	this->logger->info("Handling client.");
 
 	// Declare a buffer, and reset it
 	char buffer[4096];
@@ -195,7 +204,7 @@ void* Server::handleClient(void* element)
 		// Set the client id, to be the driver's one
 		currentClient->driverId = driver->getId();
 
-		this->logger->info("Driver no. " + currentClient->driverId + " received.");
+		this->logger->info("Driver received.");
 
 		// Store the client data
 		pthread_mutex_lock(&this->clients_locker);
@@ -226,7 +235,7 @@ void* Server::handleClient(void* element)
 				}
 				else
 				{
-					this->logger->info("Taxi no. " + taxi->getId() + " was sent.");
+					this->logger->info("Taxi was sent.");
 				}
 				// Zero to pointer.
 				taxi = NULL;
@@ -279,7 +288,7 @@ void Server::broadcast()
 			}
 			else
 			{
-				this->logger->info("Point (" + p1.getX() + ", " + p1.getY() + ") was sent.");
+				this->logger->info("Point was sent.");
 			}
 		}
 		catch (...)

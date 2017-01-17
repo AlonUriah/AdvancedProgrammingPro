@@ -12,6 +12,8 @@
 #include "../Common/Clock.h"
 #include "../Common/Trip.h"
 #include <iostream>
+#include <fstream>
+#include <sstream>
 #include "../Common/LuxuryTaxi.h"
 #include "../Common/RegularTaxi.h"
 #include "../Common/Taxi.h"
@@ -35,6 +37,7 @@ private:
 	GridFactory* factory;
 	pthread_mutex_t drivers_locker;
 	pthread_mutex_t rides_locker;
+	pthread_mutex_t bfs_locker;
 
 	struct TripInfo
 	{

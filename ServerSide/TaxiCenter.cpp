@@ -23,6 +23,7 @@ TaxiCenter::TaxiCenter(int port) : Server(port) {
 	// Initialize two mutexes
 	pthread_mutex_init(&this->drivers_locker, 0);
 	pthread_mutex_init(&this->rides_locker, 0);
+	pthread_mutex_init(&this->bfs_locker, 0);
 	/*
 	 * Parses users input and return a grid factory.
 	 * This way our code could support multiple Grids
@@ -52,6 +53,7 @@ TaxiCenter::~TaxiCenter()
 	Trip* trip = NULL;
 
 	// Destroy mutexes
+	pthread_mutex_destroy(&this->bfs_locker);
 	pthread_mutex_destroy(&this->rides_locker);
 	pthread_mutex_destroy(&this->drivers_locker);
 
@@ -123,7 +125,7 @@ Taxi* TaxiCenter::addDriver(Driver* d)
 	this->drivers->push_back(d);
 	pthread_mutex_unlock(&this->drivers_locker);
 
-	this->logger->info("Driver no. " + d->getId() + " was added.");
+	this->logger->info("Driver was added.");
 
 	return taxi;
 }
@@ -159,7 +161,7 @@ void TaxiCenter::addTaxi(int id, int type, char manu, char color)
 	}
 	taxi = NULL;
 
-	this->logger->info("Taxi no. " + taxi->getId() + " was added.");
+	this->logger->info("Taxi was added.");
 
 }
 /*
@@ -180,7 +182,9 @@ void TaxiCenter::addRide(TripWrapper* tripWrapper)
 						  this->map);
 
 	// Calculate the route
+	pthread_mutex_lock(&this->bfs_locker);
 	trip->calculateRoute();
+	pthread_mutex_unlock(&this->bfs_locker);
 
 	// Push the trip to the list.
 	pthread_mutex_lock(&this->rides_locker);
@@ -190,7 +194,7 @@ void TaxiCenter::addRide(TripWrapper* tripWrapper)
 	// Add the trip to listen to the clock
 	this->clock->addListener(trip);
 
-	this->logger->info("Trip no. " + trip->getId() + " was added.");
+	this->logger->info("Trip was added.");
 
 }
 /*
@@ -265,7 +269,9 @@ void TaxiCenter::advanceTime()
 			++tripsIt;
 	}
 
-	this->logger->info("Time is now: " + this->clock->getTime() + ".");
+	stringstream ss;
+	ss << "Time is now: " << this->clock->getTime() << ".";
+	this->logger->info(ss.str());
 
 }
 /*
