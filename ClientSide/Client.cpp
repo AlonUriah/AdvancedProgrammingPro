@@ -57,7 +57,7 @@ Client::Client(char* serverAddress, int serverPortNumber) {
  * This method uses an UDP connection (SOCK_DGRAM).
  */
 Conn_Status Client::initConnection() {
-	_logger->debug("Trying to initialize connection");
+	_logger->debug("Client: Trying to initialize connection");
 
 	_socket = socket(PF_INET, SOCK_STREAM, 0);
 
@@ -74,11 +74,11 @@ Conn_Status Client::initConnection() {
 	_sin.sin_port = htons(_serverPortNumber);
 
 	if(connect(_socket,(struct sockaddr*)&_sin, sizeof(_sin)) < 0){
-		_logger->warn("Could not connect to server");
+		_logger->warn("Client: Could not connect to server");
 		return FAILED;
 	}
 
-	_logger->debug("Connection created");
+	_logger->debug("Client: Connection created");
 	// Return a Conn_Status success if you have reached that point
 	return SUCCESS;
 }
@@ -88,11 +88,11 @@ Conn_Status Client::initConnection() {
  * Announce user and return a proper Conn_Status.
  */
 Conn_Status Client::disconnect(){
-	_logger->debug("About to terminate connection...");
+	_logger->debug("Client: About to terminate connection...");
 
 	try{
 		close(_socket);
-		_logger->debug("Socket was closed successfully");
+		_logger->debug("Client: Socket was closed successfully");
 
 		return SUCCESS;
 	}catch(...){
@@ -114,7 +114,7 @@ Conn_Status Client::sendMsg(const char data[], int data_len){
 		return FAILED;
 	}
 
-	_logger->debug("Message was sent");
+	_logger->debug("Client: Message was sent");
 	return SUCCESS;
 }
 
@@ -136,7 +136,7 @@ Conn_Status Client::receiveTaxi(){
 
 		return FAILED;
 	}else{
-		_logger->debug("Got taxi message from server");
+		_logger->debug("Client: Got taxi message from server");
 
 		try{
 			// This method expects only taxi to be received - deserialize.
@@ -173,7 +173,7 @@ void Client::setDriver(Driver* driver){
  * Starts the constant looping of receiving data from server
  */
 Conn_Status Client::startReceiving(){
-	_logger->debug("Start receiving messages from server...");
+	_logger->debug("Client: Start receiving messages from server...");
 
 	char buffer[4096];
 	long bytes;
@@ -192,7 +192,7 @@ Conn_Status Client::startReceiving(){
 
 			// 7 is server's exit code
 			if(input == "7"){
-				_logger->debug("Server asked to terminate connection, exit code: 7");
+				_logger->debug("Client: Server asked to terminate connection, exit code: 7");
 				isAlive = false;
 				continue;
 			}
@@ -212,14 +212,14 @@ Conn_Status Client::startReceiving(){
 
 				locationNotifierStr.str("");
 
-				locationNotifierStr << "I have moved to: " << updateLocation;
+				locationNotifierStr << "Client: I have moved to: " << updateLocation;
 				_logger->info(locationNotifierStr.str());
 				_driver->updateLocation(updateLocation);
 
 				memset(buffer,0,sizeof(buffer));
 
 			}catch(...){
-				_logger->warn("Coudln't get new location from server");
+				_logger->warn("Client: Coudln't get new location from server");
 			}
 		}
 	} // End of while loop
