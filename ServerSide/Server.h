@@ -7,12 +7,6 @@
  * Moreover, it handles the TaxiCenter, which
  * manages the whole data.
  */
-
-
-
-
-
-
 #include <iostream>
 #include <sys/socket.h>
 #include <stdio.h>
@@ -28,6 +22,7 @@
 #include "../Common/Common.h"
 #include "../Common/Driver.h"
 #include "../Common/Taxi.h"
+#include "../Common/Logger.h"
 #include <list>
 #include <stdexcept>
 #include <pthread.h>
@@ -127,6 +122,8 @@ private:
 	 * it.
 	 */
 	virtual Taxi* addDriver(Driver* driver) = 0;
+protected:
+	Logger* logger;
 };
 
 #endif /* SERVER_H_ */

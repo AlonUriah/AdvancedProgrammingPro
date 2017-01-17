@@ -62,8 +62,10 @@ void Logger::write(Logger_Levels level, const string& msg){
 			    << Logger_Levels_Str[level]
 				<<": " << msg << endl;
 
+	_fStream_mutex.lock();
 	// Write the message in Loggers format to fStream
 	_fStream << msgInFormat.str();
+	_fStream_mutex.unlock();
 
 	// Print it out to user, if asked to
 	if(_shouldPrint){
@@ -96,6 +98,7 @@ string getCurrentTime(){
  * Destructor
  */
 Logger::~Logger() {
+	_fStream_mutex.lock();
 	_fStream.flush();
 	_fStream.close();
 	_fStream_mutex.unlock();
@@ -111,10 +114,12 @@ void Logger::createHeadLine(){
 	msgInFormat << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << endl;
 	msgInFormat << "*  Advanced Programming Logger *"<< endl;
 	msgInFormat << "* Customized by Alon and Uriah *"<< endl;
-	msgInFormat << "*      " << getCurrentTime() << "      *" << endl;
+	msgInFormat << "*      " << getCurrentTime() << "       *" << endl;
 	msgInFormat << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << endl;
 
+	_fStream_mutex.lock();
 	_fStream << msgInFormat.str();
+	_fStream_mutex.unlock();
 
 	// Print to user, if asked to
 	if(_shouldPrint){

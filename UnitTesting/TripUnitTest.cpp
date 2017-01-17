@@ -32,7 +32,6 @@ public:
 	Point _destination;
 	Driver* _driver;
 	vector<Passenger*> _passengers;
-	Logger _logger;
 
 	/*
 	 * Empty default constructor.
@@ -48,12 +47,11 @@ public:
 	/*
 	 * Constructor.
 	 */
-	TripUnitTest(Point& src, Point& dest,Driver* driver, vector<Passenger*> passengers, Logger logger){
+	TripUnitTest(Point& src, Point& dest,Driver* driver, vector<Passenger*> passengers){
 		_source = src;
 		_destination = dest;
 		_driver = driver;
 		_passengers = passengers;
-		_logger = logger;
 		SetUp();
 	}
 

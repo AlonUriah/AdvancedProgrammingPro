@@ -28,7 +28,7 @@ private:
 	double tariff;
 	int startTime;
 	Grid* map;
-	stack<Searchable*> route;
+	stack<Searchable*>* route;
 	pthread_mutex_t bfs_locker;
 public:
 	/*

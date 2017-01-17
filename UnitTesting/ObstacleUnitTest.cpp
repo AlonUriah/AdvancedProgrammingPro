@@ -24,7 +24,7 @@ class ObstacleUnitTest : public :: testing::Test
 TEST (ObstacleUnitTest, construct)
 {
 	Point p(5,5);
-	Obstacle obs(&p, "Gym");
+	Obstacle obs(&p, (char*)"Gym");
 	EXPECT_EQ("Gym", obs.getDescription());
 }
 

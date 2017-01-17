@@ -25,30 +25,35 @@ BFS::BFS() { }
  * Destination is on top.
  * Based on wikipedia algorithm for BFS
  */
-stack<Searchable*> BFS::getRoot(Grid& map, Searchable* start, Searchable* end){
+stack<Searchable*>* BFS::getRoot(Grid& map, Searchable* start, Searchable* end){
 
 	map.resetNodesDistance();
 	map.resetNodesParents();
 
-	queue<Searchable*> visited;
+	queue<Searchable*>* visited = new queue<Searchable*>();
+
 	vector<Searchable*> neighbors;
-	stack<Searchable*> root;
+
+	stack<Searchable*>* root = new stack<Searchable*>();
+
 	start->setDistance(0);
 
-	visited.push(start);
-	while(!visited.empty()){
-		Searchable* current = visited.front();
-		visited.pop();
+	visited->push(start);
+
+	while(!visited->empty()){
+		Searchable* current = visited->front();
+		visited->pop();
 
 		//Return the root as soon as you get to destination
 		if(*current == *end){
 			Searchable* currCopy = current;
-			root.push(currCopy);
+			root->push(currCopy);
 			while(current->getParent()){
 				Searchable* parentCopy = current->getParent();
-				root.push(parentCopy);
+				root->push(parentCopy);
 				current = (current->getParent());
 			}
+			delete visited;
 			return root;
 		}
 
@@ -59,12 +64,14 @@ stack<Searchable*> BFS::getRoot(Grid& map, Searchable* start, Searchable* end){
 				iter != neighbors.end(); ++iter){
 			if(*iter && (*iter)->getDistance()<0){
 				(*iter)->setDistance(current->getDistance()+1);
-				visited.push(*iter);
+				visited->push(*iter);
 				(*iter)->setParent(current);
 			}
 		}
 			neighbors.clear();
 	}
+
+	delete visited;
 	return root;
 }
 

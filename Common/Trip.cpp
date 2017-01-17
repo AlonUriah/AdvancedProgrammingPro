@@ -17,6 +17,7 @@ Trip::Trip(int id, Point src, Point dest, int passengers, double tariff, int sta
 	// Unresolved details, yet.
 	this->driver = NULL;
 	this->map = map;
+	this->route = NULL;
 
 	pthread_mutex_init(&this->bfs_locker, 0);
 }
@@ -86,7 +87,7 @@ void Trip::calculateRoute()
 	pthread_mutex_unlock(&this->bfs_locker);
 
 	// Pop first point
-	this->route.pop();
+	this->route->pop();
 
 }
 
@@ -105,17 +106,17 @@ void Trip::timePassed(int time)
 	{
 		// Advance the taxi by speed
 		// Pop out one move.
-		if (!this->route.empty())
+		if (!this->route->empty())
 		{
-			Searchable* sr = this->route.top();
+			Searchable* sr = this->route->top();
 			this->currentLocation = sr->getValue();
-			this->route.pop();
+			this->route->pop();
 			sr = NULL;
 			// If it's a luxurytaxi, pop out another move.
-			if (this->driver->getSpeed() == 2 && !this->route.empty())
+			if (this->driver->getSpeed() == 2 && !this->route->empty())
 			{
-				this->currentLocation = this->route.top()->getValue();
-				this->route.pop();
+				this->currentLocation = this->route->top()->getValue();
+				this->route->pop();
 			}
 			// Update driver's location
 			this->driver->updateLocation(this->currentLocation);
@@ -190,6 +191,7 @@ bool Trip::operator == (const Trip &trip) const
  */
 Trip::~Trip()
 {
+	delete this->route;
 	pthread_mutex_destroy(&this->bfs_locker);
 	this->map = NULL;
 	this->driver = NULL;

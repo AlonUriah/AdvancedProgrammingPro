@@ -4,8 +4,6 @@
  * the functionality of adding taxies,
  * drivers and trips, and handling them.
  */
-
-
 #ifndef TAXICENTER_H_
 #define TAXICENTER_H_
 
@@ -14,6 +12,8 @@
 #include "../Common/Clock.h"
 #include "../Common/Trip.h"
 #include <iostream>
+#include <fstream>
+#include <sstream>
 #include "../Common/LuxuryTaxi.h"
 #include "../Common/RegularTaxi.h"
 #include "../Common/Taxi.h"
@@ -21,8 +21,8 @@
 #include "../Common/Scheduled.h"
 #include "Server.h"
 #include <list>
-using namespace std;
 
+using namespace std;
 
 class TaxiCenter : public Scheduled, public Server {
 private:
@@ -37,6 +37,7 @@ private:
 	GridFactory* factory;
 	pthread_mutex_t drivers_locker;
 	pthread_mutex_t rides_locker;
+	pthread_mutex_t bfs_locker;
 
 	struct TripInfo
 	{
@@ -45,13 +46,12 @@ private:
 	};
 
 public:
-
 	/*
 	 * Constructs a new taxi center.
 	 */
 	TaxiCenter(int port);
 	/*
-	 * Destrcuts the taxi center
+	 * Destructs the taxi center
 	 */
 	virtual ~TaxiCenter();
 	/*
@@ -88,7 +88,6 @@ public:
 	 * Call the addRide function to thread
 	 */
 	static void* callAddRide(void* element);
-
 };
 
 #endif /* TAXICENTER_H_ */

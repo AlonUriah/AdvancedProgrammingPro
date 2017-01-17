@@ -67,6 +67,7 @@ public:
 			_instance->_filePath = "logger.log";
 			_instance->_fStream_mutex.lock();
 			_instance->_fStream.open(_instance->_filePath, ios::app);
+			_instance->_fStream_mutex.unlock();
 			_instance->createHeadLine();
 		}
 
