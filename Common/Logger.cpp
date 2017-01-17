@@ -114,7 +114,7 @@ void Logger::createHeadLine(){
 	msgInFormat << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << endl;
 	msgInFormat << "*  Advanced Programming Logger *"<< endl;
 	msgInFormat << "* Customized by Alon and Uriah *"<< endl;
-	msgInFormat << "*      " << getCurrentTime() << "      *" << endl;
+	msgInFormat << "*      " << getCurrentTime() << "       *" << endl;
 	msgInFormat << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << endl;
 
 	_fStream_mutex.lock();
