@@ -19,15 +19,21 @@ Server::Server(int port) {
 	this->serverSocket = -1;
 	this->clients = new list<ClientData*>;
 
+	// Initialize mutex
 	pthread_mutex_init(&this->clients_locker, 0);
+
+	// Get the logger singleton
+	this->logger = Logger::getInstance();
+	this->logger->shouldPrint(false);
+	this->logger->info("SERVER Initialized.");
 }
 /*
  * Server destructor
  */
 Server::~Server() {
-
+	// Destroy the mutex
 	pthread_mutex_destroy(&this->clients_locker);
-
+	// Delete the clients' data
 	ClientData* pointer = NULL;;
 	while (!this->clients->empty())
 	{
@@ -37,6 +43,8 @@ Server::~Server() {
 		delete pointer;
 	}
 	delete this->clients;
+	this->logger->info("SERVER Destroyed.");
+	this->logger = NULL;
 }
 /*
  * The method start a listening connection.
@@ -48,10 +56,14 @@ void Server::handleClients(int num)
 {
 	try
 	{
+		this->logger->info("Initializing socket...");
+
 		// Open a listening socket, TCP type.
 		this->serverSocket = socket(PF_INET, SOCK_STREAM, 0);
 		if (this->serverSocket == -1)
-			perror("Error: socket was not able to initiate.");
+			this->logger->warn("Socket was not able to create.");
+
+		this->logger->info("Setting server details...");
 
 		// Define the server details.
 		memset(&this->server_addr, 0, sizeof(this->server_addr));
@@ -60,13 +72,18 @@ void Server::handleClients(int num)
 		this->server_addr.sin_port = htons(this->port);
 		bzero(&(this->server_addr.sin_zero), 8);
 
+		this->logger->info("Binding the port...");
+
 		// Try to bind the port.
 		if (bind(this->serverSocket, (struct sockaddr*)&this->server_addr,
 				sizeof(struct sockaddr)) == -1)
 		{
-			perror("Error: bind was not able to initiate.");
+			this->logger->warn("Port was not able to be binded.");
 			return;
 		}
+
+		this->logger->info("Server is now listening on port " + this->port + ".");
+
 		// Start listening to broadband
 		listen(this->serverSocket, 5);
 		// Create a threads pool of 'num' threads
@@ -85,13 +102,15 @@ void Server::handleClients(int num)
 				unsigned int client_len = sizeof(client);
 
 				// Accept a new client
-				client_val = accept(this->serverSocket, (struct sockaddr *)&client, &client_len);
+				client_val = accept(this->serverSocket, (struct sockaddr*)&client, &client_len);
 				if (client_val < 0)
 				{
-					perror("Error: client was unable to connect.");
+					this->logger->warn("Client was unable to connect.");
 				}
 				else
 				{
+					this->logger->info("Client no. " + i + " accepted.");
+
 					// Create a new client data type, and store the data
 					currentClient = new ClientData();
 					currentClient->client = client;
@@ -107,8 +126,13 @@ void Server::handleClients(int num)
 			}
 			catch (...)
 			{
+				this->logger->info("An error occurred. Server is closing...");
+
 				// Close the socket if there's an error.
 				close(this->serverSocket);
+
+				this->logger->info("Server is closed.");
+
 				return;
 			}
 			i++;
@@ -120,6 +144,9 @@ void Server::handleClients(int num)
 		 */
 		for (int i = 0; i < num; i++)
 			pthread_join(threadsPool[i], NULL);
+
+		this->logger->info("Finished handling clients.");
+
 	}
 
 	/*
@@ -138,18 +165,25 @@ void Server::handleClients(int num)
  */
 void* Server::handleClient(void* element)
 {
+
+	// Declare data pointers
 	Taxi* taxi = NULL;
 	Driver* driver = NULL;
+	// Cast the client data
 	ClientData* currentClient = (ClientData*)element;
 	// Avoid dangling pointer
 	element = NULL;
 
+	this->logger->info("Handling client no. " + currentClient->client_val + ".");
+
+	// Declare a buffer, and reset it
 	char buffer[4096];
 	memset(buffer, 0, sizeof(buffer));
+
+	// Get the Driver from the current client
 	long bytes = recv(currentClient->client_val, buffer, sizeof(buffer), 0);
 	if (bytes > 0)
 	{
-
 		// Deserialize the driver.
 		stringstream bufferStream;
 		bufferStream << buffer;
@@ -160,6 +194,8 @@ void* Server::handleClient(void* element)
 		}
 		// Set the client id, to be the driver's one
 		currentClient->driverId = driver->getId();
+
+		this->logger->info("Driver no. " + currentClient->driverId + " received.");
 
 		// Store the client data
 		pthread_mutex_lock(&this->clients_locker);
@@ -186,7 +222,11 @@ void* Server::handleClient(void* element)
 			{
 				int sent_bytes = send(currentClient->client_val, data, data_len, 0);
 				if (sent_bytes < 0) {
-					perror("Error: couldn't send taxi.");
+					this->logger->warn("Taxi cannot be sent.");
+				}
+				else
+				{
+					this->logger->info("Taxi no. " + taxi->getId() + " was sent.");
 				}
 				// Zero to pointer.
 				taxi = NULL;
@@ -211,6 +251,12 @@ void* Server::handleClient(void* element)
  */
 void Server::broadcast()
 {
+	this->logger->info("Broadcasting points to clients.");
+
+	/*
+	 * Iterate each client data, and send them the
+	 * next point they should be at.
+	 */
 	list<ClientData*>::iterator it = this->clients->begin();
 	while (it != this->clients->end())
 	{
@@ -229,12 +275,16 @@ void Server::broadcast()
 		{
 			int sent_bytes = send((*it)->client_val, data, data_len, 0);
 			if (sent_bytes < 0) {
-				perror("Error: couldn't send point.");
+				this->logger->warn("Point was not able to be sent.");
+			}
+			else
+			{
+				this->logger->info("Point (" + p1.getX() + ", " + p1.getY() + ") was sent.");
 			}
 		}
 		catch (...)
 		{
-			cout << "Error: couldn't send point." << endl;
+			this->logger->warn("An error occurred. Point couldn't not be sent.");
 		}
 		++it;
 	}
@@ -246,6 +296,8 @@ void Server::broadcast()
  */
 void Server::Abort()
 {
+	this->logger->info("Server is closing...");
+
 	// Send the client '7' to notify the server is going to close.
 	for (list<ClientData*>::iterator it = this->clients->begin(); it != this->clients->end(); ++it)
 	{
@@ -253,17 +305,19 @@ void Server::Abort()
 		{
 			int sent_bytes = send((*it)->client_val, "7", 1, 0);
 			if (sent_bytes < 0) {
-				perror("Error: couldn't send exit sign.");
+				this->logger->info("Exit sign was not able to be sent.");
 			}
 		}
 		catch (...)
 		{
-			cout << "Error: couldn't send exit sign." << endl;
+			this->logger->info("Exit sign was not able to be sent.");
 		}
 	}
 
 	// Close the server.
 	close(this->serverSocket);
+	this->logger->info("Server is closed.");
+
 }
 /*
  * Calling the handleClient method.
@@ -275,8 +329,11 @@ void Server::Abort()
  */
 void* Server::callHandleClient(void* element)
 {
+	// Cast the client data
 	ClientData* currentClient = (ClientData*)element;
+	// Call the thread function
 	currentClient->server->handleClient(element);
+	// Avoid dangling pointers
 	currentClient = NULL;
 	return NULL;
 }

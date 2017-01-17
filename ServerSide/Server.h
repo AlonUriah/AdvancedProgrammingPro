@@ -7,12 +7,6 @@
  * Moreover, it handles the TaxiCenter, which
  * manages the whole data.
  */
-
-
-
-
-
-
 #include <iostream>
 #include <sys/socket.h>
 #include <stdio.h>
@@ -28,6 +22,7 @@
 #include "../Common/Common.h"
 #include "../Common/Driver.h"
 #include "../Common/Taxi.h"
+#include "../Common/Logger.h"
 #include <list>
 #include <stdexcept>
 #include <pthread.h>
@@ -94,6 +89,7 @@ private:
 	int serverSocket;
 	list<ClientData*>* clients;
 	pthread_mutex_t clients_locker;
+	Logger* logger;
 	/*
 	 * Handle a specific client, in a separate thread
 	 */

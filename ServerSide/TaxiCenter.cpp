@@ -5,7 +5,6 @@
  * drivers and trips, and handling them.
  */
 #include "TaxiCenter.h"
-
 /*
  * Constructs a new taxi center.
  */
@@ -16,10 +15,12 @@ TaxiCenter::TaxiCenter(int port) : Server(port) {
 	this->rides = new list<Trip*>;
 	this->threadsPool = new list<pthread_t>;
 
+	// Initialize the clock
 	this->clock = new Clock();
+	// Add the taxi center to listen to the clock
 	this->clock->addListener(this);
 
-
+	// Initialize two mutexes
 	pthread_mutex_init(&this->drivers_locker, 0);
 	pthread_mutex_init(&this->rides_locker, 0);
 	/*
@@ -45,10 +46,12 @@ TaxiCenter::TaxiCenter(int port) : Server(port) {
  */
 TaxiCenter::~TaxiCenter()
 {
+	// Declare pointing items
 	Taxi* taxi = NULL;
 	Driver* driver = NULL;
 	Trip* trip = NULL;
 
+	// Destroy mutexes
 	pthread_mutex_destroy(&this->rides_locker);
 	pthread_mutex_destroy(&this->drivers_locker);
 
@@ -80,12 +83,19 @@ TaxiCenter::~TaxiCenter()
 		delete taxi;
 	}
 	taxi = NULL;
+
+	// Remove the taxi center from the listener's list
+	this->clock->removeListener(this);
+
+	// Delete lists/map
 	delete this->cabs;
 	delete this->threadsPool;
-	this->clock->removeListener(this);
 	delete this->clock;
 	delete this->map;
 	delete this->factory;
+
+	this->logger->info("Taxi center was deleted.");
+
 }
 /*
  * Adds a new driver
@@ -112,6 +122,8 @@ Taxi* TaxiCenter::addDriver(Driver* d)
 	pthread_mutex_lock(&this->drivers_locker);
 	this->drivers->push_back(d);
 	pthread_mutex_unlock(&this->drivers_locker);
+
+	this->logger->info("Driver no. " + d->getId() + " was added.");
 
 	return taxi;
 }
@@ -146,6 +158,9 @@ void TaxiCenter::addTaxi(int id, int type, char manu, char color)
 		}
 	}
 	taxi = NULL;
+
+	this->logger->info("Taxi no. " + taxi->getId() + " was added.");
+
 }
 /*
  * Adds a new ride
@@ -174,6 +189,9 @@ void TaxiCenter::addRide(TripWrapper* tripWrapper)
 
 	// Add the trip to listen to the clock
 	this->clock->addListener(trip);
+
+	this->logger->info("Trip no. " + trip->getId() + " was added.");
+
 }
 /*
  * Gets a driver's location
@@ -229,6 +247,7 @@ void TaxiCenter::timePassed(int time)
  */
 void TaxiCenter::advanceTime()
 {
+	// Notify all listeners, that time has passed
 	Trip* trip;
 	this->clock->notifyAll();
 	// Clean ended trips
@@ -245,6 +264,9 @@ void TaxiCenter::advanceTime()
 		else
 			++tripsIt;
 	}
+
+	this->logger->info("Time is now: " + this->clock->getTime() + ".");
+
 }
 /*
  * The method handles the input from the user.
