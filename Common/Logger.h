@@ -88,7 +88,7 @@ public:
 
 private:
 	static Logger* _instance;			  // Singleton Pattern
-	const string filePath = "logger.log"; // Default destination file
+	string filePath; // Default destination file
 	bool _shouldPrint;  				  // Print messages to ostream and not just to file
 
 	fstream _fStream;					  // File stream to write to
