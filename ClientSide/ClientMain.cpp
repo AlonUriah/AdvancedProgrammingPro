@@ -17,6 +17,8 @@
 #include <boost/archive/text_oarchive.hpp>
 #include <boost/archive/text_iarchive.hpp>
 
+#include <string.h>
+
 using namespace std;
 
 // Constants
@@ -29,13 +31,27 @@ const int FAIL_RETURN_CODE = 0;
  * get taxi from server and assign it to driver ->
  * start receiving location updates
  */
-int ClientMain(int argc, char** argv){
+int main(int argc, char** argv){
+
+	// Get Driver from user
+	DriverWrapper* driverWrapper = parseDriver();
+
+	// Validation check
+	if (driverWrapper == NULL)
+		exit(1);
+
+	Driver* driver = new Driver(	driverWrapper->id,
+					driverWrapper->age,
+					driverWrapper->status,
+					driverWrapper->xp,
+					driverWrapper->vehicle_id);
+
 
 	//Get Logger's singletone
 	Logger* logger = Logger::getInstance();
 	logger->debug("Client main thread was started...");
 
-	char* serverIpAdd;
+	char* serverIpAdd = (char*)"127.0.0.1";
 	int port;
 	bool isAlive = true;
 
@@ -45,7 +61,9 @@ int ClientMain(int argc, char** argv){
 	portConverter >> port;
 
 	// Assign argv[1] to serverIpAdd (Readability)
-	serverIpAdd = argv[1];
+	if(strcmp(argv[1],"localhost") != 0){
+		serverIpAdd = argv[1];
+	}
 
 	// Initiate a program's client
 	Client client(serverIpAdd,port);
@@ -58,13 +76,7 @@ int ClientMain(int argc, char** argv){
 		return FAIL_RETURN_CODE;
 	}
 
-	// Get Driver from user
-	DriverWrapper* driverWrapper = parseDriver();
-	Driver* driver = new Driver(	driverWrapper->id,
-					driverWrapper->age,
-					driverWrapper->status,
-					driverWrapper->xp,
-					driverWrapper->vehicle_id);
+
 
 	client.setDriver(driver);
 
