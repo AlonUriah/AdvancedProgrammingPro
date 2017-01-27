@@ -9,6 +9,7 @@
  * Constructs a new taxi center.
  */
 TaxiCenter::TaxiCenter(int port) : Server(port) {
+	int retVal = -1;
 	// Initialize the lists.
 	this->cabs = new list<Taxi*>;
 	this->drivers = new list<Driver*>;
@@ -28,15 +29,37 @@ TaxiCenter::TaxiCenter(int port) : Server(port) {
 	 * Parses users input and return a grid factory.
 	 * This way our code could support multiple Grids
 	 */
-	this->factory = parseGridInfo();
-	this->map = this->factory->create();
-	/*
-	 * Read info for obstacles handling.
-	 * First parameter is the number of obstacles to expect.
-	 * Later on, for each obstacle capture its location using
-	 * the following format <x value><space><y value>
-	 */
-	parseObstacles(map);
+	this->factory = NULL;
+	while (retVal < 0)
+	{
+		/*
+		 * While the factory hasn't got
+		 * a valid input, keep inputing it.
+		 */
+		while (this->factory == NULL)
+			this->factory = parseGridInfo();
+		// Create the map
+		this->map = this->factory->create();
+		/*
+		 * Read info for obstacles handling.
+		 * First parameter is the number of obstacles to expect.
+		 * Later on, for each obstacle capture its location using
+		 * the following format <x value><space><y value>
+		 */
+		retVal = parseObstacles(this->map);
+		/*
+		 * If the obstacles input is not valid,
+		 * delete the map, and start the input
+		 * from the beginning.
+		 */
+		if (retVal < 0)
+		{
+			delete this->map;
+			delete this->factory;
+			this->map = NULL;
+			this->factory = NULL;
+		}
+	}
 	/*
 	 * Start reading input from the user.
 	 */
@@ -183,9 +206,14 @@ void TaxiCenter::addRide(TripWrapper* tripWrapper)
 
 	// Calculate the route
 	pthread_mutex_lock(&this->bfs_locker);
-	trip->calculateRoute();
+	bool retVal = trip->calculateRoute();
 	pthread_mutex_unlock(&this->bfs_locker);
 
+	if (!retVal)
+	{
+		delete trip;
+		return;
+	}
 	// Push the trip to the list.
 	pthread_mutex_lock(&this->rides_locker);
 	this->rides->push_back(trip);
@@ -285,9 +313,10 @@ void TaxiCenter::input()
 	TaxiWrapper* taxiWrapper = NULL;
 	TripInfo* tripInfo = NULL;
 	int id;
-	int numOfDrivers;
+	int driversNum;
 	int userChoice;
-	string input;
+	string input, numOfDrivers, driversId;
+	stringstream numDrivers, driversIdParser;
 	list<pthread_t>::iterator it;
 
 	// Input loop.
@@ -296,18 +325,42 @@ void TaxiCenter::input()
 		// Input a number.
 		cin >> userChoice;
 
-		switch(userChoice){
+		switch(userChoice)
+		{
 		// Input drivers
 			case 1:
-				cin >> numOfDrivers;
-				this->handleClients(numOfDrivers);
+				try
+				{
+					numDrivers.clear();
+					cin >> numOfDrivers;
+					// Validation check
+					if (!numberValidation(numOfDrivers, '1'))
+					{
+						cout << "-1" << endl;
+						continue;
+					}
+					numDrivers << numOfDrivers;
+					numDrivers >> driversNum;
+					this->handleClients(driversNum);
+				}
+				catch (...)
+				{
+					cout << "-1" << endl;
+					continue;
+				}
 				break;
 		// Input a trip.
 			case 2:
 				// Declare a new thread
 				pthread_t currentThread;
 				// Get the input from the user
-				tripWrapper = parseTrip();
+				tripWrapper = parseTrip(this->map, this->clock->getTime());
+				// Validation check
+				if (tripWrapper == NULL)
+				{
+					cout << "-1" << endl;
+					continue;
+				}
 				// Organize the struct for the thread function
 				tripInfo = new TripInfo();
 				tripInfo->tripWrapper = tripWrapper;
@@ -320,13 +373,33 @@ void TaxiCenter::input()
 		// Input a taxi.
 			case 3:
 				taxiWrapper = parseTaxi();
+				if (taxiWrapper == NULL)
+				{
+					cout << "-1" << endl;
+					continue;
+				}
 				this->addTaxi(taxiWrapper->id,taxiWrapper->type,
 									      taxiWrapper->manu,taxiWrapper->color);
 				delete taxiWrapper;
 				break;
 		// Retrieve a location of a driver.
 			case 4:
-				cin >> id;
+				try
+				{
+					cin >> driversId;
+					if (!numberValidation(driversId, '1'))
+					{
+						cout << "-1" << endl;
+						continue;
+					}
+					driversIdParser << driversId;
+					driversIdParser >> id;
+				}
+				catch (...)
+				{
+					cout << "-1" << endl;
+					continue;
+				}
 				cout << this->getDriversLocation(id) << endl;
 				break;
 		// Abort the program.
@@ -354,6 +427,7 @@ void TaxiCenter::input()
 				this->broadcast();
 				break;
 			default:
+				cout << "-1" << endl;
 				break;
 		}
 	} while (userChoice != 7);

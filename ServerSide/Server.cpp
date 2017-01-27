@@ -83,8 +83,10 @@ void Server::handleClients(int num)
 			this->logger->info("Binding the port...");
 
 			// Try to bind the port.
-			if (bind(this->serverSocket, (struct sockaddr*)&this->server_addr,
-					sizeof(struct sockaddr)) == -1)
+			int bindRet = ::bind(this->serverSocket, 
+(struct sockaddr*)&this->server_addr,
+                                        sizeof(struct sockaddr)); 
+			if (bindRet < 0)
 			{
 				this->logger->warn("Port was not able to be binded.");
 				return;
