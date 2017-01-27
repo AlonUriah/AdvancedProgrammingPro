@@ -101,6 +101,10 @@ TaxiWrapper* parseTaxi();
  * that contains all the relevant data to generate
  * a new Trip.
  */
-TripWrapper* parseTrip();
-
+TripWrapper* parseTrip(Grid* map, int time);
+/*
+ * Checks for string, if it contains only
+ * numbers and a special character
+ */
+bool numberValidation(string input, char special);
 #endif /* HEADERS_COMMON_H_ */

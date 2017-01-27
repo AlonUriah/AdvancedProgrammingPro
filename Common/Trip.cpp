@@ -75,7 +75,7 @@ Point& Trip::getCurrentLocation()
 /*
  * Calculate is route
  */
-void Trip::calculateRoute()
+bool Trip::calculateRoute()
 {
 	// Build the nodes according to src and dest
 	Node begin(this->source);
@@ -86,8 +86,13 @@ void Trip::calculateRoute()
 	this->route = BFS::getRoot(*this->map, &begin, &end);
 	pthread_mutex_unlock(&this->bfs_locker);
 
+	// Check if there is a route
+	if (this->route->empty())
+		return false;
+
 	// Pop first point
 	this->route->pop();
+	return true;
 
 }
 

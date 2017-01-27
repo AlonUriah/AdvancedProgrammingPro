@@ -70,7 +70,7 @@ public:
 	/*
 	 * Calculate its route
 	 */
-	void calculateRoute();
+	bool calculateRoute();
 	/*
 	 * Scheduled abstract method
 	 */

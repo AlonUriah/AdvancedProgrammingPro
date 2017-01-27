@@ -8,6 +8,7 @@
 #include "./Factories/GridFactory.h"
 #include "Obstacle.h"
 #include <iostream>
+
 using namespace std;
 
 /*
@@ -47,20 +48,37 @@ GridFactory* parseGridInfo(){
 	string input;
 	getline(cin, input);
 
+	// Validate numbers only
+	if (!numberValidation(input, ' '))
+		return NULL;
+
 	// Split the input by spaces
 	vector<string> spaceSplitted;
 	spaceSplitted = split(input, ' ');
 
-	// Try parse to integer - x axis
-	stringstream stringStream;
-	int xValue, yValue;
-	stringStream << spaceSplitted[0];
-	stringStream >> xValue;
+	// Map size check
+	if (spaceSplitted.size() != 2)
+		return NULL;
 
-	// Try parse to integer - y axis
-	stringStream.clear();
-	stringStream << spaceSplitted[1];
-	stringStream >> yValue;
+	// Try parse to integer - x axis
+	int xValue, yValue;
+	stringstream s;
+	try
+	{
+		s << spaceSplitted[0];
+		s >> xValue;
+		s.clear();
+		s << spaceSplitted[1];
+		s >> yValue;
+	}
+	catch (...)
+	{
+		return NULL;
+	}
+
+	// Validation check
+	if (xValue <= 0 || yValue <= 0)
+		return NULL;
 
 	GridFactory* factory = new GridFactory(xValue,yValue);
 	return factory;
@@ -82,30 +100,59 @@ int parseObstacles(Grid* map){
 	getline(cin, input);
 	int numOfObstacles;
 	stringStream << input;
-	stringStream >> numOfObstacles;
+
+	// Number validation check
+	try
+	{
+		stringStream >> numOfObstacles;
+	}
+	catch (...)
+	{
+		return -1;
+	}
+
+	// Validation Check
+	if (numOfObstacles < 0)
+		return -1;
 
 	//Get ready to capture their location
 	int x;
 	int y;
 
-	for(int i=0; i<numOfObstacles; i++){
+	for(int i = 0; i < numOfObstacles; i++)
+	{
 		stringStream.clear();
 
 		//Read and parse obstacle axis info
 		getline(cin, input);
-		vector<string> pointXY = split(input,',');
-		stringStream << pointXY[0];
+		vector<string> pointXY = split(input, ',');
 
-		stringStream >> x;
+		// Two arguments validation
+		if (pointXY.size() != 2)
+			return -1;
 
-		stringStream.clear();
-		stringStream << pointXY[1];
-		stringStream >> y;
+		// Numbers validation
+		try
+		{
+			stringStream << pointXY[0];
+			stringStream >> x;
+			stringStream.clear();
+			stringStream << pointXY[1];
+			stringStream >> y;
+		}
+		catch (...)
+		{
+			return -1;
+		}
 
-		//Create a new obstacle based on that info
+		// Validation Check
+		if (x < 0 || y < 0 || x >= map->getWidth() || y >= map->getHeight())
+			return -1;
+
+		// Create a new obstacle based on that info
 		Point obstacleLocation(x,y);
 		Obstacle* currentObstacle = new Obstacle(obstacleLocation);
-		map->swapNodes(obstacleLocation,currentObstacle);
+		map->swapNodes(obstacleLocation, currentObstacle);
 	}
 
 	return numOfObstacles;
@@ -173,6 +220,18 @@ TaxiWrapper* parseTaxi(){
 	vector<string> splittedInfo;
 	splittedInfo = parseInput();
 
+	// Validation check
+	if (splittedInfo.size() != 4)
+		return NULL;
+
+	for (int i = 0; i < 2; i++)
+		if (!numberValidation(splittedInfo[i], '1'))
+			return NULL;
+
+	for (int j = 2; j < 4; j++)
+		if (splittedInfo[j].size() != 1)
+			return NULL;
+
 	int id;
 	int type;
 	char manu;
@@ -182,17 +241,29 @@ TaxiWrapper* parseTaxi(){
 	stringStream << splittedInfo[0];
 	stringStream >> id;
 
+	if (id < 0)
+		return NULL;
+
 	stringStream.clear();
 	stringStream << splittedInfo[1];
 	stringStream >> type;
+
+	if (type != 1 && type != 2)
+		return NULL;
 
 	stringStream.clear();
 	stringStream << splittedInfo[2];
 	stringStream >> manu;
 
+	if (manu != 'H' && manu != 'S' && manu != 'T' && manu != 'F')
+		return NULL;
+
 	stringStream.clear();
 	stringStream << splittedInfo[3];
 	stringStream >> color;
+
+	if (color != 'R' && color != 'B' && color != 'G' && color != 'P' && color != 'W')
+		return NULL;
 
 	// Store info in a return value of type struct TaxiWrapper.
 	TaxiWrapper* taxiWrapper = new TaxiWrapper;
@@ -211,10 +282,21 @@ TaxiWrapper* parseTaxi(){
  * that contains all the relevant data to generate
  * a new Trip.
  */
-TripWrapper* parseTrip(){
+TripWrapper* parseTrip(Grid* map, int time)
+{
 	stringstream stringStream;
 	vector<string> splittedInfo;
 	splittedInfo = parseInput();
+
+	// Validation check
+	if (splittedInfo.size() != 8)
+		return NULL;
+
+	// Validate numbers only
+	for (int i = 0; i < splittedInfo.size(); i++)
+		if (splittedInfo[i].size() == 0
+			|| !numberValidation(splittedInfo[i], '1'))
+			return NULL;
 
 	int id;
 	int startX;
@@ -229,33 +311,59 @@ TripWrapper* parseTrip(){
 	stringStream << splittedInfo[0];
 	stringStream >> id;
 
+	// Validate negative id
+	if (id < 0)
+		return NULL;
+
 	stringStream.clear();
 	stringStream << splittedInfo[1];
 	stringStream >> startX;
+
+	// Coordinates inside map
+	if (startX < 0 || startX >= map->getWidth())
+		return NULL;
 
 	stringStream.clear();
 	stringStream << splittedInfo[2];
 	stringStream >> startY;
 
+	if (startY < 0 || startY >= map->getHeight())
+		return NULL;
+
 	stringStream.clear();
 	stringStream << splittedInfo[3];
 	stringStream >> endX;
+
+	if (endX < 0 || endX >= map->getWidth())
+		return NULL;
 
 	stringStream.clear();
 	stringStream << splittedInfo[4];
 	stringStream >> endY;
 
+	if (endY < 0 || endY >= map->getHeight())
+		return NULL;
+
 	stringStream.clear();
 	stringStream << splittedInfo[5];
 	stringStream >> passengers;
+
+	if (passengers <= 0)
+		return NULL;
 
 	stringStream.clear();
 	stringStream << splittedInfo[6];
 	stringStream >> tariff;
 
+	if (tariff <= 0)
+		return NULL;
+
 	stringStream.clear();
 	stringStream << splittedInfo[7];
 	stringStream >> startTime;
+
+	if (startTime <= time)
+		return NULL;
 
 	// Store info in a return value of type struct TripWrapper.
 	TripWrapper* tripWrapper = new TripWrapper;
@@ -269,4 +377,19 @@ TripWrapper* parseTrip(){
 	tripWrapper->startTime = startTime;
 
 	return tripWrapper;
+}
+/*
+ * Checks for string, if it contains only
+ * numbers and a special character
+ */
+bool numberValidation(string input, char special)
+{
+	// First char should be a number
+	if (input.at(0) < '0' || input.at(0) > '9')
+		return false;
+	// Validate that only numbers are shown in
+	for (int i = 0; i < input.length(); i++)
+		if ((input.at(i) < '0' || input.at(i) > '9') && input.at(i) != special)
+			return false;
+	return true;
 }
