@@ -62,10 +62,12 @@ void Logger::write(Logger_Levels level, const string& msg){
 			    << Logger_Levels_Str[level]
 				<<": " << msg << endl;
 
-	_fStream_mutex.lock();
+	//_fStream_mutex.lock();
+	pthread_mutex_lock(&_fStream_mutex);
 	// Write the message in Loggers format to fStream
 	_fStream << msgInFormat.str();
-	_fStream_mutex.unlock();
+	pthread_mutex_unlock(&_fStream_mutex);
+	//_fStream_mutex.unlock();
 
 	// Print it out to user, if asked to
 	if(_shouldPrint){
@@ -98,10 +100,13 @@ string getCurrentTime(){
  * Destructor
  */
 Logger::~Logger() {
-	_fStream_mutex.lock();
+	//_fStream_mutex.lock();
+	pthread_mutex_lock(&_fStream_mutex);
 	_fStream.flush();
 	_fStream.close();
-	_fStream_mutex.unlock();
+	pthread_mutex_unlock(&_fStream_mutex);
+	pthread_mutex_destroy(&_fStream_mutex);
+//	_fStream_mutex.unlock();
 }
 /*
  * Private method to create headers in log in our
@@ -117,12 +122,23 @@ void Logger::createHeadLine(){
 	msgInFormat << "*      " << getCurrentTime() << "       *" << endl;
 	msgInFormat << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << endl;
 
-	_fStream_mutex.lock();
+	//_fStream_mutex.lock();
+	pthread_mutex_lock(&_fStream_mutex);
 	_fStream << msgInFormat.str();
-	_fStream_mutex.unlock();
+	pthread_mutex_unlock(&_fStream_mutex);
+	//_fStream_mutex.unlock();
 
 	// Print to user, if asked to
 	if(_shouldPrint){
 		cout << msgInFormat.str();
 	}
+}
+
+Logger& Logger::operator = (const Logger& newAssign){
+	if(this == &newAssign){
+		return *this;
+	}
+	delete _instance;
+	_instance = new Logger();
+	return *this;
 }

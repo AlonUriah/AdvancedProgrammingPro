@@ -11,6 +11,8 @@
 #include "Node.h"
 #include "../SearchAlgo/Searchable.h"
 
+#include <stack>
+
 #ifndef TRIP_H_
 #define TRIP_H_
 
@@ -47,6 +49,9 @@ public:
 	 * Gets the status of the trip
 	 */
 	Status getStatus();
+
+	void setStatus(Status status);
+
 	/*
 	 * Gets the trip id
 	 */
@@ -71,6 +76,8 @@ public:
 	 * Calculate its route
 	 */
 	bool calculateRoute();
+	void* getRouteAddress();
+
 	/*
 	 * Scheduled abstract method
 	 */
@@ -82,10 +89,16 @@ public:
 	/*
 	 * Two trips are equal iff their value is the same
 	 */
+
+	void assignRoute(stack<Searchable*>* root);
+
 	bool operator == (const Trip &trip) const;
 	/*
 	 * Trip destructor
 	 */
+
+	int getExecutionTime();
+
 	virtual ~Trip();
 };
 

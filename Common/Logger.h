@@ -11,7 +11,6 @@
 #include <iostream>
 
 // Singleton purposes
-#include <mutex>
 #include <thread>
 #include <fstream>
 #include <pthread.h>
@@ -65,9 +64,13 @@ public:
 			_instance = new Logger;
 			_instance->_shouldPrint = true;
 			_instance->_filePath = "logger.log";
-			_instance->_fStream_mutex.lock();
-			_instance->_fStream.open(_instance->_filePath, ios::app);
-			_instance->_fStream_mutex.unlock();
+			//_instance->_fStream_mutex.lock();
+			pthread_mutex_init(&_instance->_fStream_mutex,0);
+			pthread_mutex_lock(&_instance->_fStream_mutex);
+			const char* fPath = "logger.log";
+			_instance->_fStream.open(fPath, ios::app);
+			pthread_mutex_unlock(&_instance->_fStream_mutex);
+			//_instance->_fStream_mutex.unlock();
 			_instance->createHeadLine();
 		}
 
@@ -76,11 +79,8 @@ public:
 	/*
 	 * In case of Logger assignment, delete one of objects and keep just one.
 	 */
-	Logger& operator = (const Logger&) = delete;
-	/*
-	 * In case of Logger assignment, delete one of objects and keep just one.
-	 */
-	Logger& operator = (const Logger&&) = delete;
+	Logger& operator = (const Logger& newAssign);
+
 	/*
 	 * Destructor
 	 */
@@ -88,12 +88,12 @@ public:
 
 private:
 	static Logger* _instance;			  // Singleton Pattern
-	const string filePath = "logger.log"; // Default destination file
+	string filePath; 					 // Default destination file
 	bool _shouldPrint;  				  // Print messages to ostream and not just to file
 
 	fstream _fStream;					  // File stream to write to
 	string _filePath;					  // FilePath to save the log
-	mutex _fStream_mutex;				  // Singleton Pattern
+	pthread_mutex_t _fStream_mutex;		  // Singleton Pattern
 
 	/*
 	 * Private method to put messages in format.
@@ -109,7 +109,8 @@ private:
 		_shouldPrint = true;
 		fstream _fStream;
 		string _filePath;
-		mutex _fStream_mutex;
+		pthread_mutex_init(&_fStream_mutex,0);
+		//mutex _fStream_mutex;
 
 	}
 	/*

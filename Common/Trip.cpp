@@ -4,20 +4,23 @@
  * points, a driver and a taxi.
  */
 #include "Trip.h"
+#include <stack>
+#include "../SearchAlgo/Searchable.h"
+
 Trip::Trip(int id, Point src, Point dest, int passengers, double tariff, int startTime, Grid* map)
 {
 	this->tariff = tariff;
 	this->source = src;
 	this->destination = dest;
 	this->currentLocation = src;
-	this->status = PENDING;
+	this->status = CALCULATING;
 	this->passengers = passengers;
 	this->id = id;
 	this->startTime = startTime;
 	// Unresolved details, yet.
 	this->driver = NULL;
 	this->map = map;
-	this->route = NULL;
+	this->route = new stack<Searchable*>;
 
 	pthread_mutex_init(&this->bfs_locker, 0);
 }
@@ -44,6 +47,11 @@ Status Trip::getStatus()
 {
 	return this->status;
 }
+
+void Trip::setStatus(Status status){
+	this->status = status;
+}
+
 /*
  * Get source point
  */
@@ -94,6 +102,10 @@ bool Trip::calculateRoute()
 	this->route->pop();
 	return true;
 
+}
+
+void* Trip::getRouteAddress(){
+	return route;
 }
 
 /*
@@ -181,6 +193,11 @@ Trip& Trip::operator = (const Trip &trip)
 	map = trip.map;
 	return *this;
 }
+
+void Trip::assignRoute(stack<Searchable*>* root){
+	route = root;
+}
+
 /*
  * Two trips are equal iff their value is the same
  */
@@ -191,6 +208,11 @@ bool Trip::operator == (const Trip &trip) const
 	}
 	return false;
 }
+
+int Trip::getExecutionTime(){
+	return startTime;
+}
+
 /*
  * Destructor
  */
