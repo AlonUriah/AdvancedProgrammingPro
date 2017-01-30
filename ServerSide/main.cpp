@@ -6,14 +6,21 @@
 #include "TaxiCenter.h"
 #include <iostream>
 #include <stack>
+#include <strings.h>
 
 using namespace std;
 
 int main(int argc, char** argv){
 	// Try to get a port by arguments
+	stringstream ss;
+	int port;
+
+	ss << argv[1];
+	ss >> port;
+
 	try
 	{
-		TaxiCenter taxiCenter(atoi(argv[1]));
+		TaxiCenter taxiCenter(port);
 	}
 	catch (...)
 	{

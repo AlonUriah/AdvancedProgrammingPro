@@ -1,10 +1,32 @@
 /*
  * This is the TaxiCenter class.
  * It handles a taxi center, and give
- * the functionality of adding taxies,
+ * the functionality of adding taxis,
  * drivers and trips, and handling them.
  */
 #include "TaxiCenter.h"
+#include "../Common/Factories/GridFactory.h"
+#include "../Common/Grid.h"
+#include "../Common/Clock.h"
+#include "../Common/Trip.h"
+#include "../Common/LuxuryTaxi.h"
+#include "../Common/RegularTaxi.h"
+#include "../Common/Taxi.h"
+#include "../Common/Common.h"
+#include "../Common/Scheduled.h"
+#include "./Server.h"
+#include "../Multithreading/ThreadPool.h"
+#include "../Multithreading/Tasks/BFSTask.h"
+#include "../Multithreading/ITask.h"
+
+#include <iostream>
+#include <fstream>
+#include <sstream>
+#include <pthread.h>
+#include <mutex>
+#include <list>
+
+#define THREADS_NUM 1
 /*
  * Constructs a new taxi center.
  */
@@ -14,10 +36,13 @@ TaxiCenter::TaxiCenter(int port) : Server(port) {
 	this->cabs = new list<Taxi*>;
 	this->drivers = new list<Driver*>;
 	this->rides = new list<Trip*>;
-	this->threadsPool = new list<pthread_t>;
+
+	_threadPool = new ThreadPool(THREADS_NUM);
+	_threadPool->start();
 
 	// Initialize the clock
-	this->clock = new Clock();
+	this->clock = new Clock;
+
 	// Add the taxi center to listen to the clock
 	this->clock->addListener(this);
 
@@ -25,6 +50,7 @@ TaxiCenter::TaxiCenter(int port) : Server(port) {
 	pthread_mutex_init(&this->drivers_locker, 0);
 	pthread_mutex_init(&this->rides_locker, 0);
 	pthread_mutex_init(&this->bfs_locker, 0);
+
 	/*
 	 * Parses users input and return a grid factory.
 	 * This way our code could support multiple Grids
@@ -37,7 +63,7 @@ TaxiCenter::TaxiCenter(int port) : Server(port) {
 		 * a valid input, keep inputing it.
 		 */
 		while (this->factory == NULL)
-			this->factory = parseGridInfo();
+		this->factory = parseGridInfo();
 		// Create the map
 		this->map = this->factory->create();
 		/*
@@ -70,12 +96,14 @@ TaxiCenter::TaxiCenter(int port) : Server(port) {
  */
 TaxiCenter::~TaxiCenter()
 {
+	delete _threadPool;
+
 	// Declare pointing items
 	Taxi* taxi = NULL;
 	Driver* driver = NULL;
 	Trip* trip = NULL;
 
-	// Destroy mutexes
+	// Destroy mutex
 	pthread_mutex_destroy(&this->bfs_locker);
 	pthread_mutex_destroy(&this->rides_locker);
 	pthread_mutex_destroy(&this->drivers_locker);
@@ -87,6 +115,7 @@ TaxiCenter::~TaxiCenter()
 		this->rides->pop_front();
 		delete trip;
 	}
+
 	trip = NULL;
 	delete this->rides;
 
@@ -114,14 +143,15 @@ TaxiCenter::~TaxiCenter()
 
 	// Delete lists/map
 	delete this->cabs;
-	delete this->threadsPool;
+	//delete this->threadsPool;
+	delete _threadPool;
 	delete this->clock;
 	delete this->map;
 	delete this->factory;
 
-	this->logger->info("Taxi center was deleted.");
-
+	_logger->info("Taxi center was deleted.");
 }
+
 /*
  * Adds a new driver
  */
@@ -148,10 +178,11 @@ Taxi* TaxiCenter::addDriver(Driver* d)
 	this->drivers->push_back(d);
 	pthread_mutex_unlock(&this->drivers_locker);
 
-	this->logger->info("Driver was added.");
+	_logger->info("Driver was added.");
 
 	return taxi;
 }
+
 /*
  * Adds a new taxi.
  */
@@ -184,17 +215,17 @@ void TaxiCenter::addTaxi(int id, int type, char manu, char color)
 	}
 	taxi = NULL;
 
-	this->logger->info("Taxi was added.");
+	_logger->info("Taxi was added.");
 
 }
 /*
  * Adds a new ride
  */
-void TaxiCenter::addRide(TripWrapper* tripWrapper)
-{
-	// Initialize two points according to the parameters.
+
+Trip* TaxiCenter::parseTripWrapper(TripWrapper* tripWrapper){
 	Point start(tripWrapper->startX, tripWrapper->startY);
 	Point end(tripWrapper->endX, tripWrapper->endY);
+
 	// Creates a new trip.
 	Trip* trip = new Trip(tripWrapper->id,
 						  start,
@@ -203,17 +234,11 @@ void TaxiCenter::addRide(TripWrapper* tripWrapper)
 						  tripWrapper->tariff,
 						  tripWrapper->startTime,
 						  this->map);
+	return trip;
+}
 
-	// Calculate the route
-	pthread_mutex_lock(&this->bfs_locker);
-	bool retVal = trip->calculateRoute();
-	pthread_mutex_unlock(&this->bfs_locker);
-
-	if (!retVal)
-	{
-		delete trip;
-		return;
-	}
+void TaxiCenter::addRide(Trip* trip)
+{
 	// Push the trip to the list.
 	pthread_mutex_lock(&this->rides_locker);
 	this->rides->push_back(trip);
@@ -222,9 +247,9 @@ void TaxiCenter::addRide(TripWrapper* tripWrapper)
 	// Add the trip to listen to the clock
 	this->clock->addListener(trip);
 
-	this->logger->info("Trip was added.");
-
+	_logger->info("Trip was added.");
 }
+
 /*
  * Gets a driver's location
  */
@@ -242,6 +267,7 @@ Point& TaxiCenter::getDriversLocation(int id)
 	}
 	throw;
 }
+
 /*
  * Assign the rides to the drivers,
  * and moving the drivers to the end point.
@@ -255,13 +281,22 @@ void TaxiCenter::timePassed(int time)
 	 * For each trip, assign a driver, according
 	 * to the availability.
 	 */
+	Status tripStatus;
+	int tripStartTime;
 	while (tripsIt != this->rides->end())
 	{
+		tripStatus = (*tripsIt)->getStatus();
+		tripStartTime = (*tripsIt)->getTime();
+
+		while(tripStatus == CALCULATING && tripStartTime == time){
+			sleep(1);
+		}
+
 		driversIt = this->drivers->begin();
 		while (driversIt != this->drivers->end())
 		{
-			if ((*tripsIt)->getStatus() == PENDING
-				&& (*tripsIt)->getTime() == time
+			if (tripStatus == PENDING
+				&& tripStartTime == time
 				&& (*driversIt)->isAvailable()
 				&& (*driversIt)->getLocation() == (*tripsIt)->getSource())
 			{
@@ -274,6 +309,7 @@ void TaxiCenter::timePassed(int time)
 	}
 	// After assigning drivers, start driving.
 }
+
 /*
  * Advances time by 1.
  */
@@ -299,7 +335,7 @@ void TaxiCenter::advanceTime()
 
 	stringstream ss;
 	ss << "Time is now: " << this->clock->getTime() << ".";
-	this->logger->info(ss.str());
+	_logger->info(ss.str());
 
 }
 /*
@@ -311,7 +347,11 @@ void TaxiCenter::input()
 	// Declarations.
 	TripWrapper* tripWrapper = NULL;
 	TaxiWrapper* taxiWrapper = NULL;
-	TripInfo* tripInfo = NULL;
+	ITask* routeTask;
+	Trip* trip;
+	Searchable* startNode;
+	Searchable* endNode;
+
 	int id;
 	int driversNum;
 	int userChoice;
@@ -341,7 +381,8 @@ void TaxiCenter::input()
 					}
 					numDrivers << numOfDrivers;
 					numDrivers >> driversNum;
-					this->handleClients(driversNum);
+
+					addClients(driversNum, cabs, drivers, drivers_locker, _threadPool);
 				}
 				catch (...)
 				{
@@ -351,35 +392,44 @@ void TaxiCenter::input()
 				break;
 		// Input a trip.
 			case 2:
-				// Declare a new thread
-				pthread_t currentThread;
 				// Get the input from the user
 				tripWrapper = parseTrip(this->map, this->clock->getTime());
+
 				// Validation check
 				if (tripWrapper == NULL)
 				{
 					cout << "-1" << endl;
 					continue;
 				}
-				// Organize the struct for the thread function
-				tripInfo = new TripInfo();
-				tripInfo->tripWrapper = tripWrapper;
-				tripInfo->taxiCenter = this;
-				// Create the thread
-				pthread_create(&currentThread, NULL, callAddRide, (void*)tripInfo);
-				// Add it to the threads pool
-				this->threadsPool->push_back(currentThread);
+
+				trip = parseTripWrapper(tripWrapper);
+
+				// Add the trip with a default status of CALCULATING
+				addRide(trip);
+
+				pthread_mutex_lock(&bfs_locker);
+				startNode = map->getNodeAt(trip->getSource());
+				endNode = map->getNodeAt(trip->getDestination());
+				pthread_mutex_unlock(&bfs_locker);
+
+				routeTask = new BFSTask(2, map, bfs_locker,trip,startNode,endNode);
+				_threadPool->addTask(routeTask);
+
+
 				break;
 		// Input a taxi.
 			case 3:
 				taxiWrapper = parseTaxi();
+
 				if (taxiWrapper == NULL)
 				{
 					cout << "-1" << endl;
 					continue;
 				}
-				this->addTaxi(taxiWrapper->id,taxiWrapper->type,
-									      taxiWrapper->manu,taxiWrapper->color);
+
+				addTaxi(taxiWrapper->id,taxiWrapper->type,
+									  taxiWrapper->manu,taxiWrapper->color);
+
 				delete taxiWrapper;
 				break;
 		// Retrieve a location of a driver.
@@ -404,27 +454,15 @@ void TaxiCenter::input()
 				break;
 		// Abort the program.
 			case 7:
-				this->Abort();
+				abort();
 				break;
 		// Move the time forward by 1.
 			case 9:
-				// Check if calculations of trips' routes has finished
-				it = this->threadsPool->begin();
-				/*
-				 * Iterate the list of threads,
-				 * for each one, join it, and wait
-				 * until it's finished.
-				 * After that, remove it from the list.
-				 */
-				while (!this->threadsPool->empty())
-				{
-					pthread_join(*it, NULL);
-					it = this->threadsPool->erase(it);
-				}
 				// Advance time by 1
 				this->advanceTime();
 				// Broadcast to all clients the current location
 				this->broadcast();
+
 				break;
 			default:
 				cout << "-1" << endl;
@@ -440,7 +478,7 @@ void* TaxiCenter::callAddRide(void* element)
 	// Cast the client data
 	TripInfo* tripInfo = (TripInfo*)element;
 	// Call the addRide method to add a trip
-	tripInfo->taxiCenter->addRide(tripInfo->tripWrapper);
+	//tripInfo->taxiCenter->addRide(tripInfo->tripWrapper);
 	// Avoid dangling pointer
 	tripInfo->taxiCenter = NULL;
 	// Delete the structs

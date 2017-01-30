@@ -1,12 +1,12 @@
 /*
- * This is the Server class.
- * It handles the whole server
- * functionalities, including the input
- * from the server manager, and send/receive,
- * inputs from the clients.
- * Moreover, it handles the TaxiCenter, which
- * manages the whole data.
+ * Server.h
+ *
+ *  Created on: Jan 28, 2017
+ *      Author: alon
  */
+
+#include <list>
+#include <pthread.h>
 #include <iostream>
 #include <sys/socket.h>
 #include <stdio.h>
@@ -15,116 +15,46 @@
 #include <unistd.h>
 #include <string.h>
 #include <fstream>
-#include <string>
 #include <sstream>
 #include <boost/archive/text_oarchive.hpp>
 #include <boost/archive/text_iarchive.hpp>
-#include "../Common/Common.h"
-#include "../Common/Driver.h"
-#include "../Common/Taxi.h"
+
+
+#include "../Common/ClientData.h"
 #include "../Common/Logger.h"
-#include <list>
-#include <stdexcept>
-#include <pthread.h>
+#include "../Common/Taxi.h"
+#include "../Common/Driver.h"
+#include "../Common/Point.h"
+#include "../Multithreading/ThreadPool.h"
+
+
+#ifndef SERVERSIDE_SERVER_H_
+#define SERVERSIDE_SERVER_H_
 
 using namespace std;
 
-#ifndef SERVER_H_
-#define SERVER_H_
-
-
-/*
- * This is the Server class.
- * It handles the whole server
- * functionalities, including the input
- * from the server manager, and send/receive,
- * inputs from the clients.
- * Moreover, it handles the TaxiCenter, which
- * manages the whole data.
- */
 class Server {
-public:
-	/*
-	 * A server constructor.
-	 */
-	Server(int port);
-	/*
-	 * Server destructor
-	 */
-	virtual ~Server();
-	/*
-	 * The method start a listening connection.
-	 * In the future, it will listen as a different
-	 * Thread, while each incoming connection will be
-	 * followed to another Thread.
-	 */
-	void handleClients(int num);
-	/*
-	 * The method gets a Point, and send
-	 * it to the client. This is for trailing
-	 * its route.
-	 */
-	void broadcast();
-	/*
-	 * The method aborts the connection.
-	 * It happens while sending the character
-	 * '7' as an input.
-	 */
-	void Abort();
 private:
-	/*
-	 * A private struct which organizes
-	 * the data of a client, which we need
-	 * in order to communicate with.
-	 */
-	struct ClientData {
-		int client;
-		int client_val;
-		unsigned int client_len;
-		int driverId;
-		Server* server;
-	};
+	int _port;
+	struct sockaddr_in _serverAddr;
+	int _serverSocket;
+	pthread_mutex_t _clientsLocker;
 
-	int port;
-	struct sockaddr_in server_addr;
-	int serverSocket;
-	list<ClientData*>* clients;
-	pthread_mutex_t clients_locker;
-	/*
-	 * Handle a specific client, in a separate thread
-	 */
-	void* handleClient(void* element);
-	/*
-	 * Calling the handleClient method.
-	 * This is a static method, since the pthread_create
-	 * function receives a specific pointer to function,
-	 * and it can't be an inner method class one, because
-	 * the 'this' reference is hidden among the
-	 * method parameters.
-	 */
-	static void* callHandleClient(void* element);
-	/*
-	 * Finds a drivers location.
-	 *
-	 * Using the template design pattern.
-	 * We remain it as an abstract method,
-	 * and wish for the children to implement
-	 * it.
-	 */
+	void initServer();
 	virtual Point& getDriversLocation(int id) = 0;
-	/*
-	 * Adds a driver to the list, and gets
-	 * back a 'Taxi' object which belongs
-	 * to the driver.
-	 *
-	 * Using the template design pattern.
-	 * We remain it as an abstract method,
-	 * and wish for the children to implement
-	 * it.
-	 */
 	virtual Taxi* addDriver(Driver* driver) = 0;
+
 protected:
-	Logger* logger;
+	Logger* _logger;
+	list<ClientData*>* _clients = new list<ClientData*>;
+
+public:
+	Server(int port);
+	void addClients(int num, list<Taxi*>* cabs, list<Driver*>* drivers,
+			pthread_mutex_t& driversLocker, ThreadPool* handler);
+	void broadcast();
+	void abort();
+	virtual ~Server();
 };
 
-#endif /* SERVER_H_ */
+#endif /* SERVERSIDE_SERVER_H_ */

@@ -1,26 +1,31 @@
 /*
  * This is the TaxiCenter class.
  * It handles a taxi center, and give
- * the functionality of adding taxies,
+ * the functionality of adding taxis,
  * drivers and trips, and handling them.
  */
-#ifndef TAXICENTER_H_
-#define TAXICENTER_H_
 
 #include "../Common/Factories/GridFactory.h"
 #include "../Common/Grid.h"
 #include "../Common/Clock.h"
 #include "../Common/Trip.h"
-#include <iostream>
-#include <fstream>
-#include <sstream>
 #include "../Common/LuxuryTaxi.h"
 #include "../Common/RegularTaxi.h"
 #include "../Common/Taxi.h"
 #include "../Common/Common.h"
 #include "../Common/Scheduled.h"
-#include "Server.h"
+#include "../Multithreading/ThreadPool.h"
+#include "./Server.h"
+
+#include <iostream>
+#include <fstream>
+#include <sstream>
+#include <pthread.h>
+#include <mutex>
 #include <list>
+
+#ifndef TAXICENTER_H_
+#define TAXICENTER_H_
 
 using namespace std;
 
@@ -30,7 +35,8 @@ private:
 	list<Driver*>* drivers;
 	list<Taxi*>* cabs;
 	list<Trip*>* rides;
-	list<pthread_t>* threadsPool;
+
+	ThreadPool* _threadPool;
 	Clock* clock;
 
 	Grid* map;
@@ -65,7 +71,10 @@ public:
 	/*
 	 * Adds a new ride.
 	 */
-	void addRide(TripWrapper* tripWrapper);
+	void addRide(Trip* trip);
+
+	Trip* parseTripWrapper(TripWrapper* tripWrapper);
+
 	/*
 	 * Gets a driver's location
 	 */
