@@ -93,12 +93,22 @@ void ThreadPool::wait(){
  */
 ThreadPool::~ThreadPool() {
 	_logger = 0;
-
+	// delete threads
 	for(int i=0; i<_threadsNum; i++){
 		Thread* currThread = (*_threadsArr+i);
 		delete currThread;
 	}
-
 	delete _threadsArr;
+
+	// delete ITasks
+	ITask* task = NULL;
+	while (!this->_taskQueue->empty())
+	{
+		task = this->_taskQueue->front();
+		this->_taskQueue->pop();
+		delete task;
+	}
+	delete this->_taskQueue;
+
 	pthread_mutex_destroy(&_taskQueueLocker);
 }
