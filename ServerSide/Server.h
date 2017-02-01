@@ -46,7 +46,7 @@ private:
 
 protected:
 	Logger* _logger;
-	list<ClientData*>* _clients = new list<ClientData*>;
+	list<ClientData*>* _clients;
 
 public:
 	Server(int port);

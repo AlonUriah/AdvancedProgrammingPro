@@ -20,7 +20,7 @@ Trip::Trip(int id, Point src, Point dest, int passengers, double tariff, int sta
 	// Unresolved details, yet.
 	this->driver = NULL;
 	this->map = map;
-	this->route = new stack<Searchable*>;
+	this->route = NULL;//new stack<Searchable*>;
 
 	pthread_mutex_init(&this->bfs_locker, 0);
 }

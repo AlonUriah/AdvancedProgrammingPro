@@ -84,6 +84,20 @@ public:
 	virtual void setReturnValue(size_t objectSize, void* returnValue){
 		memcpy(_returnValue,returnValue,objectSize);
 	}
+
+	virtual bool operator==(ITask& other)const{
+		return (_taskId == other._taskId);
+	}
+
+	virtual ITask& operator=(ITask& otherTask){
+		if(this == &otherTask){
+			return *this;	
+		}
+		_returnValue = otherTask._returnValue;
+		_logger = otherTask._logger;
+		_taskId = otherTask._taskId;
+		return *this;
+	}
 };
 
 #endif /* MULTITHREADING_TASK_H_ */

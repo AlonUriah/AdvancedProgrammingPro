@@ -19,9 +19,9 @@ private:
 	pthread_t _threadId;
 	bool _isTasking;
 
-	static bool _shouldRun;
-	static queue<ITask*>* _tasksQueue;
-	static pthread_mutex_t* _tasksQueueLocker;
+	pthread_mutex_t* _tasksQueueLocker;
+	queue<ITask*>* _tasksQueue;
+	bool _shouldRun;
 
 public:
 	/*

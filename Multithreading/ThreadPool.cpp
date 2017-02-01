@@ -17,14 +17,16 @@ using namespace std;
  */
 ThreadPool::ThreadPool(int threadsNum) :
 	_threadsNum(threadsNum) {
-	_taskQueue = new queue<ITask*>();
+	_taskQueue = new queue<ITask*>;
 	_threadsArr = new Thread*[_threadsNum];
+	_shouldRun = false;
+	_logger = Logger::getInstance();
+
+	pthread_mutex_init(&_taskQueueLocker,0);
 
 	for(int i=0; i < _threadsNum; i++){
 		_threadsArr[i] = new Thread(i, _taskQueue, &_taskQueueLocker);
 	}
-
-	pthread_mutex_init(&_taskQueueLocker,0);
 }
 
 /*
@@ -32,11 +34,10 @@ ThreadPool::ThreadPool(int threadsNum) :
  */
 void ThreadPool::start(){
 	_shouldRun = true;
-
+ 
 	// Start all threads and expose them as pending
 	for(int i=0; i<_threadsNum; i++){
-		Thread* thread = (*_threadsArr+i);
-		thread->create();
+		_threadsArr[i]->create();
 	}
 }
 
@@ -50,7 +51,7 @@ void ThreadPool::stop(bool forceStop){
 		_shouldRun = false;
 
 		for(int i=0; i<_threadsNum; i++){
-			(*_threadsArr+i)->stop();
+			_threadsArr[i]->stop();
 		}
 	}
 	else{
@@ -95,10 +96,10 @@ ThreadPool::~ThreadPool() {
 	_logger = 0;
 	// delete threads
 	for(int i=0; i<_threadsNum; i++){
-		Thread* currThread = (*_threadsArr+i);
-		delete currThread;
+		_threadsArr[i]->stop();
+		delete _threadsArr[i];
 	}
-	delete _threadsArr;
+	delete[] _threadsArr;
 
 	// delete ITasks
 	ITask* task = NULL;

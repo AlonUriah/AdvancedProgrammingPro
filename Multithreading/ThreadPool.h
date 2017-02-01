@@ -21,8 +21,8 @@ using namespace std;
 class ThreadPool : public ITaskHandler{
 private:
 	int _threadsNum;
-	bool _shouldRun = true;
-	Logger* _logger = Logger::getInstance();
+	bool _shouldRun;
+	Logger* _logger;
 
 	Thread** _threadsArr;
 	queue<ITask*>* _taskQueue;

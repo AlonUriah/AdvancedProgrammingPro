@@ -52,7 +52,8 @@ void BFSTask::start(){
 
 	_trip->assignRoute(root);
 	_trip->setStatus(PENDING);
-
+	
+	root = NULL;
 	stringstream ss;
 	ss << "Done calculating route to trip id " << _trip->getId();
 	_logger->info(ss.str());

@@ -72,9 +72,10 @@ public:
 	 * Adds a new ride.
 	 */
 	void addRide(Trip* trip);
-
+	/*
+	 * Parses TripWrapper into Trip
+	 */
 	Trip* parseTripWrapper(TripWrapper* tripWrapper);
-
 	/*
 	 * Gets a driver's location
 	 */

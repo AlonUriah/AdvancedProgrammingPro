@@ -16,10 +16,13 @@
 
 using namespace std;
 
-// Static members initialization
-bool Thread::_shouldRun = false;
-queue<ITask*>* Thread::_tasksQueue;
-pthread_mutex_t* Thread::_tasksQueueLocker;
+struct threadData{
+	int _threadId;
+	bool* _shouldRun;
+	bool* _isTasking;
+	queue<ITask*>* _tasksQueue;
+	pthread_mutex_t* _tasksQueueLocker;
+};
 
 /*
  * Constructor
@@ -28,6 +31,8 @@ Thread::Thread(){
 	_threadId = -1;
 	_shouldRun = false;
 	_isTasking = false;
+	_tasksQueueLocker = 0;
+	_tasksQueue = 0;
 }
 
 /*
@@ -38,7 +43,7 @@ Thread::Thread(int threadId, queue<ITask*>* tasksQueue, pthread_mutex_t* tasksQu
 	_tasksQueueLocker = tasksQueueLocker;
 
 	_threadId = threadId;
-	_shouldRun = false;
+	_shouldRun = true;
 	_isTasking = false;
 }
 
@@ -46,9 +51,14 @@ Thread::Thread(int threadId, queue<ITask*>* tasksQueue, pthread_mutex_t* tasksQu
  * Creates and return this wrapper pthread_t
  */
 pthread_t* Thread::create(){
-	_shouldRun = true;
+	threadData* data = new threadData;
+	data->_threadId = _threadId;
+	data->_shouldRun = &_shouldRun;
+	data->_isTasking = &_isTasking;
+	data->_tasksQueue = _tasksQueue;
+	data->_tasksQueueLocker = _tasksQueueLocker;
 
-	pthread_create(&_threadId, NULL, run, this);
+	pthread_create(&_threadId, NULL, run, (void*)data);
 
 	return &_threadId;
 }
@@ -57,6 +67,8 @@ pthread_t* Thread::create(){
  * Destructor
  */
 Thread::~Thread() {
+	_shouldRun = false;
+	pthread_join(_threadId,NULL);
 	_tasksQueue = 0;
 	_tasksQueueLocker = 0;
 }
@@ -102,26 +114,19 @@ pthread_mutex_t* Thread::getTasksQueueLocker(){
  * by looking at tasks queue, pulling tasks and handle them
  */
 void* Thread::run(void* args){
+
 	ITask* taskToHandle = 0;
+	threadData* thisThread = (threadData*)args;
+	pthread_mutex_t* locker = thisThread->_tasksQueueLocker;
+	queue<ITask*>* tasksQueue = thisThread->_tasksQueue;
 
-	Thread* thisThread = (Thread*)args;
+	while(*(thisThread->_shouldRun)){
 
-	cout << "thread {" << *thisThread->getPThread() << "} is running..." << endl;
-
-	queue<ITask*>* tasksQueue = thisThread->getTasksQueue();
-
-	while(thisThread->shouldRun()){
+		pthread_mutex_lock(locker);
 		if(!tasksQueue->empty()){
-			// Pull first task out of tasks queue
-			pthread_mutex_t* locker = _tasksQueueLocker;
-
-			pthread_mutex_lock(locker);
-				taskToHandle = tasksQueue->front();
-				tasksQueue->pop();
+			taskToHandle = tasksQueue->front();
+			tasksQueue->pop();		
 			pthread_mutex_unlock(locker);
-
-			cout << "thread {" << *thisThread->getPThread()
-					<< "} is taking care of task {" << taskToHandle->getTaskId() <<"}" << endl;
 
 			/*
 			 * Task holds everything it needs.
@@ -130,16 +135,25 @@ void* Thread::run(void* args){
 			 */
 
 			if(taskToHandle != 0){
-				thisThread->setIsTasking(true);
+				*(thisThread->_isTasking) = true;
 				taskToHandle->start();
-				thisThread->setIsTasking(false);
+				*(thisThread->_isTasking) = false;
 				delete taskToHandle;
 			}
+		}else{
+			pthread_mutex_unlock(locker);
 		}
 	}
 
+	tasksQueue = 0;
+	locker = 0;
 	taskToHandle = 0;
-	cout << "thread {" << *thisThread->getPThread() <<"} has finished running" << endl << endl;
+	thisThread->_shouldRun = 0;
+	thisThread->_isTasking = 0;
+	thisThread->_tasksQueue = 0;
+	thisThread->_tasksQueueLocker = 0;
+
+	delete thisThread;
 	return NULL;
 }
 

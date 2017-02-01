@@ -26,7 +26,7 @@
 #include <mutex>
 #include <list>
 
-#define THREADS_NUM 1
+#define THREADS_NUM 5
 /*
  * Constructs a new taxi center.
  */
@@ -96,8 +96,6 @@ TaxiCenter::TaxiCenter(int port) : Server(port) {
  */
 TaxiCenter::~TaxiCenter()
 {
-	delete _threadPool;
-
 	// Declare pointing items
 	Taxi* taxi = NULL;
 	Driver* driver = NULL;
@@ -107,6 +105,8 @@ TaxiCenter::~TaxiCenter()
 	pthread_mutex_destroy(&this->bfs_locker);
 	pthread_mutex_destroy(&this->rides_locker);
 	pthread_mutex_destroy(&this->drivers_locker);
+
+	delete _threadPool;
 
 	// Free the trips' list
 	while (!this->rides->empty())
@@ -144,7 +144,7 @@ TaxiCenter::~TaxiCenter()
 	// Delete lists/map
 	delete this->cabs;
 	//delete this->threadsPool;
-	delete _threadPool;
+
 	delete this->clock;
 	delete this->map;
 	delete this->factory;
@@ -223,17 +223,19 @@ void TaxiCenter::addTaxi(int id, int type, char manu, char color)
  */
 
 Trip* TaxiCenter::parseTripWrapper(TripWrapper* tripWrapper){
+	
 	Point start(tripWrapper->startX, tripWrapper->startY);
 	Point end(tripWrapper->endX, tripWrapper->endY);
 
 	// Creates a new trip.
 	Trip* trip = new Trip(tripWrapper->id,
-						  start,
-						  end,
-						  tripWrapper->passengers,
-						  tripWrapper->tariff,
-						  tripWrapper->startTime,
-						  this->map);
+					  start,
+					  end,
+					  tripWrapper->passengers,
+					  tripWrapper->tariff,
+					  tripWrapper->startTime,
+					  this->map);
+
 	return trip;
 }
 
@@ -347,17 +349,18 @@ void TaxiCenter::input()
 	// Declarations.
 	TripWrapper* tripWrapper = NULL;
 	TaxiWrapper* taxiWrapper = NULL;
-	ITask* routeTask;
-	Trip* trip;
-	Searchable* startNode;
-	Searchable* endNode;
+	ITask* routeTask = NULL;
+	Trip* trip = NULL;
+	Searchable* startNode = NULL;
+	Searchable* endNode = NULL;
+	Point* start = NULL;
+	Point* end = NULL;
 
 	int id;
 	int driversNum;
 	int userChoice;
 	string input, numOfDrivers, driversId;
 	stringstream numDrivers, driversIdParser;
-	list<pthread_t>::iterator it;
 
 	// Input loop.
 	do
@@ -403,6 +406,7 @@ void TaxiCenter::input()
 				}
 
 				trip = parseTripWrapper(tripWrapper);
+				delete tripWrapper;
 
 				// Add the trip with a default status of CALCULATING
 				addRide(trip);
@@ -413,8 +417,13 @@ void TaxiCenter::input()
 				pthread_mutex_unlock(&bfs_locker);
 
 				routeTask = new BFSTask(2, map, bfs_locker,trip,startNode,endNode);
+				
 				_threadPool->addTask(routeTask);
 
+				routeTask = NULL;
+				startNode = NULL;
+				endNode = NULL;
+				trip = NULL;
 
 				break;
 		// Input a taxi.

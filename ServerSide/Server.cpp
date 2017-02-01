@@ -18,6 +18,7 @@ using namespace std;
 Server::Server(int port) {
 	_port = port;
 	_serverSocket = -1;
+
 	_clients = new list<ClientData*>;
 
 	// Init clients list locker
@@ -25,7 +26,7 @@ Server::Server(int port) {
 
 	// Get the logger singleton
 	_logger = Logger::getInstance();
-	_logger->shouldPrint(true);
+	_logger->shouldPrint(false);
 	_logger->info("SERVER Initialized.");
 }
 
@@ -49,7 +50,7 @@ void Server::initServer(){
 
 	_logger->info("Binding the port...");
 
-		// Try to bind the port.
+	// Try to bind the port.
 	int bindRet = ::bind(_serverSocket,
 					(struct sockaddr*)&_serverAddr,
 					sizeof(struct sockaddr));
@@ -116,11 +117,11 @@ void Server::addClients(int num, list<Taxi*>* cabs, list<Driver*>* drivers,
 			currentClient->clientLen = client_len;
 
 			ITask* handleClientTask = new AcceptClientTask(clientsReceived,
-															currentClient,
-															_serverSocket,
-															drivers,
-															&driversLocker,
-															cabs);
+										currentClient,
+										_serverSocket,
+										drivers,
+										&driversLocker,
+										cabs);
 			handler->addTask(handleClientTask);
 
 			_clients->push_back(currentClient);
@@ -216,15 +217,17 @@ Server::~Server() {
 	// Delete the clients' data
 	ClientData* currentClient = NULL;
 
-
 	while (!_clients->empty())
 	{
 		currentClient = _clients->front();
 		_clients->pop_front();
 		delete currentClient;
+		currentClient = NULL;
 	}
 
+	currentClient = NULL;
 	delete _clients;
+
 	_logger->info("SERVER Destroyed.");
 	delete _logger;
 }
